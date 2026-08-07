@@ -70,7 +70,17 @@ export function ScrollEngine() {
       { rootMargin: "0px 0px -10% 0px", threshold: 0.08 },
     );
 
-    targets.forEach((el) => observer.observe(el));
+    // Anything already scrolled past before the engine mounted is shown at
+    // once. Loading a deep link, or flicking down the page during hydration,
+    // would otherwise leave those sections hidden until the reader scrolled
+    // back up to them — and there is nothing to animate above the fold anyway.
+    targets.forEach((el) => {
+      if (el.getBoundingClientRect().bottom < 0) {
+        el.classList.add("is-in");
+        return;
+      }
+      observer.observe(el);
+    });
 
     return () => {
       cancelAnimationFrame(frame);

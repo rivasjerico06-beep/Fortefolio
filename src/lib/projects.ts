@@ -26,30 +26,30 @@ export const projects: readonly Project[] = [
   {
     slug: "lumen-cafe",
     name: "Lumen Café",
-    kind: "Business theme rebuild",
+    kind: "Editorial site, designed then built",
     summary:
-      "The classic WordPress business layout — content column, widget sidebar, footer widgets — rebuilt static so it loads in under a second.",
+      "An art-directed café site — full-bleed photography, scroll-driven type, a live open/closed indicator — built to a page-weight budget with no animation library.",
     year: "2026",
     stack: ["Next.js", "Tailwind CSS", "Server Components"],
-    accent: "#a8551f",
+    accent: "#c8551b",
     brief:
-      "Lumen is a twelve-seat café running the theme half of small businesses run: header, sidebar widgets, a blog roll, four footer widget columns. It worked, but it took eleven seconds to show opening hours on a phone.",
+      "Lumen is a twelve-seat coffee bar in Poblacion. They wanted a site that looked like the room does — photographic, unhurried, confident — and that told you whether they were open right now without making you read a table.",
     challenge:
-      "The owner liked the layout and did not want it redesigned — regulars knew where everything was. So the brief was to keep the theme's structure exactly and make it fast, rather than talk them into something minimal they had not asked for.",
+      "Sites that look like this usually cost four megabytes and an animation library. The design was drafted in Figma from a written brief, which produced a good token layer and a working data model — and also a palette that failed contrast in four places and a day-of-week lookup that silently resolved Sunday and Tuesday to the wrong rows.",
     approach: [
-      "Reproduce the theme's grid faithfully: content column, widget sidebar, breadcrumbs, footer widget rows.",
-      "Render the whole thing as static HTML at build time, so hours and menu appear on first paint instead of after PHP, MySQL and a plugin stack.",
-      "Rebuild the nav dropdowns and mobile menu in CSS and a native <details>, replacing the theme's jQuery entirely.",
-      "Use a system serif for headings instead of the theme's three webfonts — the look survives, four font downloads do not.",
+      "Rebuild the design against its own tokens, correcting the palette so secondary text and accent links clear 4.5:1 in both themes and splitting the accent into a fill tone and a darker text tone.",
+      "Drive every animation with CSS keyframes and one shared IntersectionObserver, so a single reduced-motion rule stops all of it and no content can be stranded invisible.",
+      "Compute the open/closed state from a pure function that takes the time as an argument, rendered only after mount — server-rendering it would bake the build-time answer into the HTML.",
+      "Put every read behind an async accessor and every write behind a Server Action, so connecting a real CMS and inbox changes those files and nothing else.",
     ],
     outcome: [
-      { label: "Largest Contentful Paint", value: "0.9s", note: "on simulated 4G" },
-      { label: "JavaScript for the layout", value: "0KB", note: "menus are CSS and <details>" },
+      { label: "Animation library", value: "0KB", note: "CSS keyframes and one observer" },
       {
-        label: "Lighthouse accessibility",
-        value: "100",
-        note: "keyboard and contrast audited",
+        label: "Contrast failures fixed",
+        value: "4",
+        note: "found by measuring, not by eye",
       },
+      { label: "Pages prerendered static", value: "11", note: "including every article" },
     ],
   },
   {

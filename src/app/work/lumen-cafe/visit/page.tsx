@@ -1,191 +1,155 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { Clock, MapPin, Phone } from "lucide-react";
-import { WpBreadcrumbs, WpLayout } from "@/components/wp/wp-chrome";
-import { BASE, address, hours } from "../data";
-import { LumenHeader, LumenSidebar, MapPlaceholder, PageHeading } from "../parts";
+import { MapPin, Phone } from "lucide-react";
+import { Reveal } from "@/components/motion/reveal";
+import { PageTitle, SectionHead } from "../chrome";
+import { BASE, address, gallery } from "../data";
+import { EnquiryForm, HoursTable } from "./parts";
 
 export const metadata: Metadata = {
   title: "Visit — Lumen Café",
-  description: "Where to find Lumen Café, opening hours, parking, and how to get in touch.",
+  description:
+    "114 Kalayaan Avenue, Poblacion. Opening hours, how to get here, and how to reach us.",
 };
 
 const gettingHere = [
   "Two minutes on foot from the Kalayaan jeepney stop, heading away from the main road.",
   "There is no parking directly out front. The lot behind the building is free after 18:00.",
   "The entrance is a single step up. Ask and we will happily bring your order out to you.",
+  "Twelve seats, first come first served. We do not take bookings.",
 ];
 
 export default function VisitPage() {
   return (
     <>
-      <LumenHeader active={`${BASE}/visit`} />
-      <WpBreadcrumbs trail={[{ label: "Home", href: BASE }, { label: "Visit" }]} />
+      <PageTitle
+        index="04"
+        label="Visit"
+        title="Visit"
+        intro="We are on Kalayaan Avenue, open from seven every day. The twelve seats are first come, first served."
+      />
 
-      <WpLayout sidebar={<LumenSidebar />}>
-        <article className="border border-[var(--wp-line)] bg-[var(--wp-surface)] p-6 sm:p-8">
-          <PageHeading
-            title="Visit"
-            intro="We are on Kalayaan Avenue, open from seven every day. No bookings — the twelve seats are first come, first served."
-          />
+      {/* Address and hours */}
+      <section className="mx-auto max-w-[90rem] px-5 py-16 sm:px-10 sm:py-24">
+        <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-5">
+            <p className="lc-eyebrow">01 — Where</p>
+            <address className="mt-6 text-[clamp(1.5rem,3vw,2.25rem)] leading-[1.25] not-italic">
+              {address.street}
+              <br />
+              {address.area}
+              <br />
+              <span style={{ color: "var(--lc-fg-2)" }}>{address.postcode}</span>
+            </address>
 
-          <MapPlaceholder className="mt-6 h-52 sm:h-64" />
-
-          <div className="mt-6 grid gap-6 sm:grid-cols-2">
-            <section>
-              <h2 className="text-lg font-bold">Address</h2>
-              <address className="mt-2 space-y-1 text-[14.5px] text-[var(--wp-ink-2)] not-italic">
-                <p className="flex items-start gap-2">
-                  <MapPin
-                    className="mt-0.5 size-4 shrink-0 text-[var(--wp-accent)]"
-                    aria-hidden
-                  />
-                  <span>
-                    {address.street}
-                    <br />
-                    {address.area}
-                    <br />
-                    {address.postcode}
-                  </span>
-                </p>
-                <p className="flex items-center gap-2 pt-1">
-                  <Phone className="size-4 shrink-0 text-[var(--wp-accent)]" aria-hidden />
-                  <a
-                    href={`tel:${address.phone.replace(/\s/g, "")}`}
-                    className="hover:text-[var(--wp-accent)] hover:underline"
-                  >
-                    {address.phone}
-                  </a>
-                </p>
-              </address>
+            <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
+              <a
+                href={`tel:${address.phone.replace(/\s/g, "")}`}
+                className="lc-eyebrow inline-flex items-center gap-2"
+                style={{ color: "var(--lc-accent-text)" }}
+              >
+                <Phone className="size-4" aria-hidden />
+                {address.phone}
+              </a>
               <a
                 href="https://maps.google.com"
-                className="mt-4 inline-flex items-center gap-1.5 bg-[var(--wp-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--wp-accent-ink)]"
+                className="lc-eyebrow inline-flex items-center gap-2"
+                style={{ color: "var(--lc-accent-text)" }}
               >
                 <MapPin className="size-4" aria-hidden />
                 Open in Maps
               </a>
-            </section>
+            </div>
+          </div>
 
-            <section>
-              <h2 className="flex items-center gap-2 text-lg font-bold">
-                <Clock className="size-4 text-[var(--wp-accent)]" aria-hidden />
-                Opening hours
+          <div className="lg:col-span-7">
+            <p className="lc-eyebrow">02 — When</p>
+            <div className="mt-6">
+              <HoursTable />
+            </div>
+            <p className="mt-5 text-[15px] leading-relaxed" style={{ color: "var(--lc-fg-2)" }}>
+              The kitchen closes an hour before we do, and the last coffee goes out fifteen
+              minutes before close. That is not us being difficult — it is the only way the
+              machine gets cleaned before midnight.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Map / room */}
+      <Reveal kind="scale">
+        <div
+          className="ken-burns relative aspect-[21/9] w-full overflow-hidden border-y"
+          style={{ borderColor: "var(--lc-line)" }}
+        >
+          <Image
+            src={gallery[3].image}
+            alt={gallery[3].alt}
+            fill
+            sizes="100vw"
+            placeholder="blur"
+            className="object-cover"
+          />
+        </div>
+      </Reveal>
+
+      {/* Getting here */}
+      <section className="mx-auto max-w-[90rem] px-5 py-16 sm:px-10 sm:py-24">
+        <SectionHead index="03" label="Getting here" />
+        <ol className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
+          {gettingHere.map((line, index) => (
+            <Reveal as="li" key={line} kind="up" stagger={index} className="flex gap-5">
+              <span
+                className="lc-eyebrow shrink-0 pt-1"
+                style={{ color: "var(--lc-accent-text)" }}
+              >
+                0{index + 1}
+              </span>
+              <span className="text-[17px] leading-relaxed" style={{ color: "var(--lc-fg-2)" }}>
+                {line}
+              </span>
+            </Reveal>
+          ))}
+        </ol>
+      </section>
+
+      {/* Enquiry */}
+      <section
+        className="border-t py-16 sm:py-24"
+        style={{ borderColor: "var(--lc-line)", backgroundColor: "var(--lc-surface)" }}
+      >
+        <div className="mx-auto grid max-w-[90rem] gap-12 px-5 sm:px-10 lg:grid-cols-12 lg:gap-16">
+          <div className="lg:col-span-4">
+            <div className="lc-sticky">
+              <p className="lc-eyebrow">04 — Ask us something</p>
+              <h2 className="mt-5 text-[clamp(2rem,4.5vw,3.25rem)] leading-[0.95]">
+                Large orders, private hire, or anything this page has not answered
               </h2>
-              <dl className="mt-2">
-                {hours.map((entry) => (
-                  <div
-                    key={entry.day}
-                    className="flex items-baseline justify-between gap-4 border-b border-dashed border-[var(--wp-line)] py-2 last:border-b-0"
-                  >
-                    <dt className="text-[14px] text-[var(--wp-ink-2)]">{entry.day}</dt>
-                    <dd className="text-[14px] tabular-nums">{entry.time}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-3 text-[12.5px] text-[var(--wp-ink-2)]">
-                The kitchen closes an hour before we do, and the last coffee goes out fifteen
-                minutes before close.
-              </p>
-            </section>
-          </div>
-
-          <section className="mt-8 border-t border-[var(--wp-line)] pt-6">
-            <h2 className="text-lg font-bold">Getting here</h2>
-            <div className="wp-prose mt-3">
-              <ul>
-                {gettingHere.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* Enquiry form — labelled properly, but inert: this is a demo */}
-          <section className="mt-8 border-t border-[var(--wp-line)] pt-6">
-            <h2 className="text-lg font-bold">Ask us something</h2>
-            <p className="mt-1 text-[12.5px] text-[var(--wp-ink-2)]">
-              For large orders, private hire, or anything the page has not answered. Fields
-              marked <span aria-hidden>*</span> are required.
-            </p>
-
-            <div className="mt-4 space-y-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="visit-name" className="block text-[13px] font-medium">
-                    Name <span aria-hidden>*</span>
-                  </label>
-                  <input
-                    id="visit-name"
-                    type="text"
-                    autoComplete="name"
-                    className="mt-1.5 w-full border border-[var(--wp-line)] bg-[var(--wp-surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--wp-accent)]"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="visit-email" className="block text-[13px] font-medium">
-                    Email <span aria-hidden>*</span>
-                  </label>
-                  <input
-                    id="visit-email"
-                    type="email"
-                    autoComplete="email"
-                    className="mt-1.5 w-full border border-[var(--wp-line)] bg-[var(--wp-surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--wp-accent)]"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="visit-subject" className="block text-[13px] font-medium">
-                  What is it about?
-                </label>
-                <select
-                  id="visit-subject"
-                  defaultValue="General"
-                  className="mt-1.5 w-full border border-[var(--wp-line)] bg-[var(--wp-surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--wp-accent)]"
-                >
-                  <option>General</option>
-                  <option>Large order</option>
-                  <option>Private hire</option>
-                  <option>Working here</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="visit-message" className="block text-[13px] font-medium">
-                  Message <span aria-hidden>*</span>
-                </label>
-                <textarea
-                  id="visit-message"
-                  rows={4}
-                  className="mt-1.5 w-full border border-[var(--wp-line)] bg-[var(--wp-surface)] px-3 py-2 text-[14px] outline-none focus:border-[var(--wp-accent)]"
-                />
-              </div>
-              <button
-                type="button"
-                className="bg-[var(--wp-accent)] px-5 py-2.5 text-[13px] font-bold tracking-wide text-[var(--wp-accent-ink)] uppercase"
+              <p
+                className="mt-6 max-w-xs text-[16px] leading-relaxed"
+                style={{ color: "var(--lc-fg-2)" }}
               >
-                Send enquiry
-              </button>
-              <p className="text-[12px] text-[var(--wp-ink-2)]">
-                This is a portfolio demo, so the form does not send anywhere. On a real build it
-                would post to the site&rsquo;s inbox.
+                If it is quicker to phone, phone. Otherwise this reaches the same place.
               </p>
             </div>
-          </section>
-
-          <div className="mt-8 border-t border-[var(--wp-line)] pt-6">
-            <p className="text-[14.5px] text-[var(--wp-ink-2)]">
-              Wondering what to order?{" "}
-              <Link
-                href={`${BASE}/menu`}
-                className="font-semibold text-[var(--wp-accent)] hover:underline"
-              >
-                Have a look at the menu
-              </Link>
-              .
-            </p>
           </div>
-        </article>
-      </WpLayout>
+          <div className="lg:col-span-8">
+            <EnquiryForm />
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[90rem] px-5 pb-8 sm:px-10">
+        <div className="flex flex-wrap items-baseline justify-between gap-6 py-14">
+          <p className="text-[clamp(1.5rem,3vw,2.25rem)] leading-tight">
+            Wondering what to order?
+          </p>
+          <Link href={`${BASE}/menu`} className="lc-link lc-eyebrow">
+            Have a look at the menu
+          </Link>
+        </div>
+      </section>
     </>
   );
 }

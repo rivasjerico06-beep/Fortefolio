@@ -14,7 +14,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { n } = await params;
   return {
-    title: `Blog — page ${n} — Lumen Café`,
+    title: `Journal — page ${n} — Lumen Café`,
     description: "Notes on what is on the grinder, the kitchen, and opening hours.",
   };
 }

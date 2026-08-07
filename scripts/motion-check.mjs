@@ -48,12 +48,27 @@ const ok = (label, cond, detail = "") =>
   // Scroll to a mid-page section and confirm its reveal fired
   const missions = page.getByRole("heading", { name: /commitments every brief/i });
   await missions.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1000);
-  const wrapOpacity = await missions.evaluate((el) => {
-    const wrap = el.closest("[data-reveal]");
-    return wrap ? getComputedStyle(wrap).opacity : "no wrapper";
-  });
-  ok("mid-page reveal reaches opacity 1", wrapOpacity === "1", wrapOpacity);
+
+  // Wait for the transition to settle rather than guessing a duration — a
+  // fixed timeout catches it mid-flight at 0.999 and reads as a failure.
+  const settledMid = await missions
+    .evaluate(
+      (el) =>
+        new Promise((resolve) => {
+          const wrap = el.closest("[data-reveal]");
+          if (!wrap) return resolve("no wrapper");
+          const deadline = Date.now() + 5000;
+          const tick = () => {
+            const value = getComputedStyle(wrap).opacity;
+            if (value === "1") return resolve("1");
+            if (Date.now() > deadline) return resolve(value);
+            requestAnimationFrame(tick);
+          };
+          tick();
+        }),
+    )
+    .catch(() => "threw");
+  ok("mid-page reveal reaches opacity 1", settledMid === "1", String(settledMid));
 
   await ctx.close();
 }
@@ -219,11 +234,11 @@ const ok = (label, cond, detail = "") =>
    decoration is checked too, since a stalled marquee is a visible bug. */
 {
   const MENU = `${BASE}/work/lumen-cafe/menu`;
-  const rowCount = (page) => page.evaluate(() => document.querySelectorAll(".menu-row").length);
+  const rowCount = (page) => page.evaluate(() => document.querySelectorAll("li.lc-row").length);
   const hiddenRows = (page) =>
     page.evaluate(
       () =>
-        [...document.querySelectorAll(".menu-row")].filter(
+        [...document.querySelectorAll("li.lc-row")].filter(
           (el) => Number(getComputedStyle(el).opacity) < 1,
         ).length,
     );
@@ -241,7 +256,7 @@ const ok = (label, cond, detail = "") =>
     ok("no-JS: every menu row is fully visible", (await hiddenRows(page)) === 0);
     ok(
       "no-JS: the featured image still renders",
-      await page.locator("figure img").first().isVisible(),
+      await page.locator("#espresso img").first().isVisible(),
     );
     await page.screenshot({ path: `${OUT}/menu-no-js.png`, fullPage: true });
     await ctx.close();
@@ -291,7 +306,7 @@ const ok = (label, cond, detail = "") =>
     // fold has legitimately not fired yet — measure against that same box.
     const hiddenOnScreen = await page.evaluate(() => {
       const fold = window.innerHeight * 0.9;
-      return [...document.querySelectorAll(".menu-row")].filter((el) => {
+      return [...document.querySelectorAll("li.lc-row")].filter((el) => {
         const box = el.getBoundingClientRect();
         const settled = box.top >= 0 && box.bottom <= fold;
         return settled && Number(getComputedStyle(el).opacity) < 1;

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ArchiveView } from "./archive-view";
 
 export const metadata: Metadata = {
-  title: "Blog — Lumen Café",
+  title: "Journal — Lumen Café",
   description: "Notes on what is on the grinder, the kitchen, and opening hours.",
 };
 

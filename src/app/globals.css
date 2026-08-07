@@ -392,13 +392,207 @@ body {
 }
 
 /* ==========================================================================
-   Café embellishments
+   Lumen Café — editorial theme
 
-   The sort of thing a theme's "animations" toggle ships with: a slow pan on
-   featured images, steam over the page title, a stamp that turns, a notice bar
-   that scrolls. Every one is a plain keyframe animation on decoration only, so
-   the reduced-motion rule at the foot of this file stops all of them at once
-   and none of them can strand content the way a JS-driven reveal could.
+   The demo carries its own palette rather than the portfolio's. It lives here
+   as a class rather than inline custom properties because it needs a dark
+   variant, and an inline style cannot express an attribute selector.
+
+   Every value is contrast-checked against its own ground. The accent exists in
+   two tones on purpose: one accent cannot be both a legible body-text colour
+   and a rich fill, so `--lc-accent` is for fills and display type (3.85:1,
+   clears the 3:1 large-text bar) and `--lc-accent-text` is for anything read at
+   body size (4.51:1).
+   ========================================================================== */
+
+.lumen {
+  color-scheme: light;
+
+  --lc-bg: #f4efe7;
+  --lc-surface: #efe8de;
+  --lc-fg: #16110e;
+  --lc-fg-2: #776b5f; /* 4.53:1 on --lc-bg */
+  --lc-accent: #c8551b; /* fills and display type only */
+  --lc-accent-text: #b64d19; /* 4.51:1 — body-size accent text */
+  --lc-line: #e4dcd0;
+  --lc-line-strong: #cfc3b2;
+}
+
+[data-theme="dark"] .lumen {
+  color-scheme: dark;
+
+  --lc-bg: #16110e;
+  --lc-surface: #1f1915;
+  --lc-fg: #f4efe7;
+  --lc-fg-2: #8a7c6e; /* 4.63:1 on the dark ground */
+  --lc-accent: #c8551b;
+  --lc-accent-text: #ca5c24; /* 4.52:1 */
+  --lc-line: #2c241e;
+  --lc-line-strong: #3d332b;
+}
+
+.lumen {
+  background: var(--lc-bg);
+  color: var(--lc-fg);
+  font-family: var(--font-lumen-sans), "Inter Tight", system-ui, sans-serif;
+}
+
+.lumen h1,
+.lumen h2,
+.lumen h3,
+.lumen .lc-display {
+  font-family: var(--font-lumen-serif), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.lumen ::selection {
+  background: var(--lc-accent);
+  color: #fff;
+}
+
+.lumen :focus-visible {
+  outline: 2px solid var(--lc-accent-text);
+  outline-offset: 3px;
+}
+
+/* Editorial detail: the small-caps section label used throughout */
+.lc-eyebrow {
+  font-family: var(--font-lumen-sans), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lc-fg-2);
+}
+
+/* A rule that draws itself in when its section arrives */
+.lc-rule {
+  height: 1px;
+  background: var(--lc-line-strong);
+  transform-origin: left;
+}
+.js .lc-rule[data-reveal] {
+  opacity: 1;
+  transform: scaleX(0);
+  transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.js .lc-rule[data-reveal].is-in {
+  transform: scaleX(1);
+}
+
+/* Link underline that grows from the left, for editorial body links */
+.lc-link {
+  color: var(--lc-accent-text);
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 1px;
+  transition: background-size 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lc-link:hover {
+  background-size: 0% 1px;
+}
+
+/* ==========================================================================
+   Lumen looping motion
+
+   All decoration, all keyframes, so the reduced-motion rule at the foot of this
+   file stops every one at once. Nothing here carries content.
+   ========================================================================== */
+
+/* The open/closed dot: a soft ring that breathes outward, forever. */
+@keyframes lc-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.lc-ping::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: lc-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Scroll cue at the foot of the hero — a line that falls and repeats. */
+@keyframes lc-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+.lc-cue span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  animation: lc-cue 2.4s ease-in-out infinite;
+}
+
+/* A slow tonal drift behind the statement section. */
+@keyframes lc-wash {
+  0%,
+  100% {
+    transform: translate3d(-4%, 0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.15);
+    opacity: 0.8;
+  }
+}
+.lc-wash {
+  animation: lc-wash 22s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Menu row: the price slides its rule across as the row is hovered. */
+.lc-row .lc-row-rule {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lc-row:hover .lc-row-rule {
+  transform: scaleX(1);
+}
+.lc-row img {
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lc-row:hover img {
+  transform: scale(1.06);
+}
+
+/* Sticky section label needs a stacking context above the scrolling column */
+.lc-sticky {
+  position: sticky;
+  top: 7rem;
+}
+
+/* ==========================================================================
+   Slow pan on featured images
+
+   Shared by the demos. A plain keyframe animation on decoration only, so the
+   reduced-motion rule at the foot of this file stops it along with everything
+   else, and it can never strand content the way a JS-driven reveal could.
    ========================================================================== */
 
 /* Featured images pan slowly. They start scaled up so the pan never exposes an
@@ -417,73 +611,6 @@ body {
   will-change: transform;
 }
 
-/* Steam: three wisps on staggered loops. Decorative, and they both start and
-   end invisible, so switching the animation off simply removes them. */
-@keyframes steam-rise {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 3px, 0) scale(0.7);
-  }
-  25% {
-    opacity: 0.75;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(3px, -15px, 0) scale(1.6);
-  }
-}
-.steam span {
-  opacity: 0;
-  animation: steam-rise 3.6s ease-out infinite;
-}
-.steam span:nth-child(2) {
-  animation-delay: 1.2s;
-}
-.steam span:nth-child(3) {
-  animation-delay: 2.4s;
-}
-
-/* The "on the grinder" stamp turns once every half minute. */
-@keyframes stamp-turn {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.stamp-turn {
-  animation: stamp-turn 32s linear infinite;
-}
-
-/* The open-now dot in the notice bar. */
-@keyframes soft-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-}
-.soft-pulse {
-  animation: soft-pulse 2.4s ease-in-out infinite;
-}
-
-/* Menu rows: the thumbnail eases in under the cursor, and a printed-menu dot
-   leader joins the dish to its price. */
-.menu-row img {
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.menu-row:hover img {
-  transform: scale(1.09);
-}
-.dot-leader {
-  flex: 1 1 auto;
-  align-self: end;
-  margin-bottom: 0.3rem;
-  border-bottom: 1px dotted var(--wp-line);
-}
-
 /* Printing has no scroll and no hover — show everything, plainly */
 @media print {
   [data-reveal],
@@ -495,10 +622,14 @@ body {
   }
   .marquee,
   .ken-burns img,
-  .steam span,
-  .stamp-turn,
-  .soft-pulse {
+  .lc-ping::after,
+  .lc-cue span,
+  .lc-wash {
     animation: none !important;
+  }
+  .lc-rule[data-reveal],
+  .lc-row .lc-row-rule {
+    transform: none !important;
   }
 }
 

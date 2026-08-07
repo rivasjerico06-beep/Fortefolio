@@ -1,172 +1,356 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { WpBreadcrumbs, WpLayout, PostMeta } from "@/components/wp/wp-chrome";
-import { BASE, homeHero, hours, menu, posts } from "./data";
-import { LumenHeader, LumenSidebar, OpenTodayStrip } from "./parts";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { PinnedStrip } from "@/components/motion/pinned-strip";
+import { Reveal, WordRise } from "@/components/motion/reveal";
+import { getMenu, listPosts } from "./api";
+import { SectionHead } from "./chrome";
+import { BASE, address, gallery, menuHero } from "./data";
+import { hoursRows } from "./hours";
+import { OpenIndicator } from "./nav";
 
 export const metadata: Metadata = {
-  title: "Lumen Café — demo site",
+  title: "Lumen Café — twelve seats in Poblacion",
   description:
-    "A classic WordPress business-theme layout: content column, widget sidebar, footer widgets.",
+    "A twelve-seat specialty coffee bar on Kalayaan Avenue. Open from seven, beans roasted eight kilometres away.",
 };
 
-export default function LumenHome() {
-  const featured = menu[0];
+export default async function LumenHome() {
+  const [menu, posts] = await Promise.all([getMenu(), listPosts()]);
+
+  // The strip shows what the bar is known for, drawn from the real menu
+  const signatures = [
+    ...menu[0].items.slice(0, 3),
+    ...menu[1].items.slice(1, 4),
+    ...menu[2].items.slice(0, 2),
+  ];
 
   return (
     <>
-      <LumenHeader active={BASE} />
-      <WpBreadcrumbs trail={[{ label: "Home" }]} />
-
-      {/* Full-width header image area — the theme's "featured image" slot */}
-      <div className="ken-burns relative h-40 overflow-hidden border-b border-[var(--wp-line)] sm:h-56">
-        <Image
-          src={homeHero.image}
-          alt={homeHero.alt}
-          fill
-          preload
-          sizes="100vw"
-          placeholder="blur"
-          className="object-cover"
-        />
-      </div>
-
-      <WpLayout sidebar={<LumenSidebar />}>
-        <article className="border border-[var(--wp-line)] bg-[var(--wp-surface)] p-6 sm:p-8">
-          <h1 className="text-3xl font-bold sm:text-4xl">Welcome to Lumen</h1>
-          <PostMeta
-            date="1 March 2026"
-            author="Lumen"
-            category="About"
-            categoryHref={`${BASE}/about`}
+      {/* 01 — Hero ------------------------------------------------------- */}
+      <section className="relative flex min-h-[calc(100svh-6rem)] flex-col justify-end overflow-hidden">
+        <div className="ken-burns absolute inset-0">
+          <Image
+            src={menuHero.image}
+            alt={menuHero.alt}
+            fill
+            preload
+            sizes="100vw"
+            placeholder="blur"
+            className="object-cover"
           />
+        </div>
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, var(--lc-bg) 2%, color-mix(in srgb, var(--lc-bg) 35%, transparent) 38%, transparent 78%)",
+          }}
+        />
 
-          <div className="wp-prose mt-6">
-            <p>
+        <div className="relative mx-auto w-full max-w-[90rem] px-5 pb-14 sm:px-10 sm:pb-20">
+          <h1 className="text-[clamp(3.5rem,15vw,13rem)] leading-[0.82] tracking-[-0.02em]">
+            <WordRise text="Lumen Café" as="span" />
+          </h1>
+
+          <div
+            className="mt-10 flex flex-col gap-5 border-t pt-6 sm:flex-row sm:items-center sm:justify-between"
+            style={{ borderColor: "var(--lc-line-strong)" }}
+          >
+            <OpenIndicator />
+            <p className="lc-eyebrow" style={{ color: "var(--lc-fg)" }}>
+              {address.street} · {address.area}
+            </p>
+          </div>
+        </div>
+
+        {/* Looping scroll cue */}
+        <div
+          aria-hidden
+          className="lc-cue absolute right-5 bottom-6 hidden h-14 w-px sm:right-10 sm:block"
+          style={{ color: "var(--lc-fg-2)" }}
+        >
+          <span />
+        </div>
+      </section>
+
+      {/* 02 — Statement --------------------------------------------------- */}
+      <section className="relative overflow-hidden py-28 sm:py-40">
+        <div
+          aria-hidden
+          className="lc-wash pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, color-mix(in srgb, var(--lc-accent) 22%, transparent), transparent)",
+          }}
+        />
+        <div className="mx-auto max-w-[62rem] px-5 text-center sm:px-10">
+          <Reveal kind="up">
+            <p className="lc-display text-[clamp(1.75rem,4.2vw,3.25rem)] leading-[1.15]">
               Twelve seats, one espresso machine, and beans we roast eight kilometres from here.
-              We open at seven every morning and the batch brew is free to refill before ten.
+              The batch brew is free to refill before ten, and the tables at the back have the
+              plug sockets.
             </p>
-            <p>
-              The kitchen closes an hour before we do, and the last coffee goes out fifteen
-              minutes before close. If you are coming for a laptop afternoon, the tables at the
-              back have the plug sockets.
-            </p>
-            <blockquote>
-              Ask what is on the grinder — the single origin changes every few weeks and we are
+          </Reveal>
+          <Reveal kind="up" stagger={2}>
+            <p
+              className="mx-auto mt-8 max-w-md text-[16px] leading-relaxed"
+              style={{ color: "var(--lc-fg-2)" }}
+            >
+              Ask what is on the grinder. The single origin changes every few weeks and we are
               usually far too keen to talk about it.
-            </blockquote>
-          </div>
+            </p>
+          </Reveal>
+        </div>
+      </section>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[var(--wp-line)] pt-6">
-            <OpenTodayStrip />
-            <Link
-              href={`${BASE}/visit`}
-              className="ml-auto inline-flex items-center gap-1.5 bg-[var(--wp-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--wp-accent-ink)]"
+      {/* 03 — Signatures, pinned horizontal ------------------------------- */}
+      <section>
+        <div className="mx-auto max-w-[90rem] px-5 sm:px-10">
+          <SectionHead
+            index="03"
+            label="On the bar"
+            action={
+              <Link href={`${BASE}/menu`} className="lc-link lc-eyebrow">
+                The full menu
+              </Link>
+            }
+          />
+        </div>
+
+        <PinnedStrip scene="lumen-signatures">
+          <div className="flex w-[74vw] shrink-0 flex-col justify-center sm:w-[34vw]">
+            <h2 className="text-[clamp(2rem,4vw,3.25rem)] leading-[0.95]">
+              What people come back for
+            </h2>
+            <p
+              className="mt-5 max-w-xs text-[15px] leading-relaxed"
+              style={{ color: "var(--lc-fg-2)" }}
             >
-              <MapPin className="size-4" aria-hidden />
-              Plan your visit
-            </Link>
+              Keep scrolling — these move sideways. Prices include tax, and there is no minimum
+              on card.
+            </p>
           </div>
-        </article>
 
-        {/* A taste of the menu, with the full thing one click away */}
-        <section className="mt-10">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--wp-accent)] pb-2">
-            <h2 className="text-2xl font-bold">On the Bar</h2>
-            <Link
-              href={`${BASE}/menu`}
-              className="text-[13px] font-semibold text-[var(--wp-accent)] hover:underline"
+          {signatures.map((item) => (
+            <article
+              key={item.name}
+              className="lc-row group flex w-[68vw] shrink-0 flex-col sm:w-[26vw] lg:w-[21vw]"
             >
-              See the full menu →
-            </Link>
-          </div>
-
-          <ul className="mt-5 border border-[var(--wp-line)] bg-[var(--wp-surface)] px-6 py-2">
-            {featured.items.map((item) => (
-              <li
-                key={item.name}
-                className="flex items-baseline justify-between gap-4 border-b border-dashed border-[var(--wp-line)] py-3 last:border-b-0"
+              <div
+                className="relative aspect-[4/5] overflow-hidden border"
+                style={{ borderColor: "var(--lc-line)" }}
               >
-                <span>
-                  <span className="text-[15px] font-medium">{item.name}</span>
-                  <span className="block text-[12.5px] text-[var(--wp-ink-2)]">
-                    {item.note}
-                  </span>
-                </span>
-                <span className="shrink-0 text-[14px] tabular-nums">{item.price}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* Blog roll */}
-        <section className="mt-10">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b-2 border-[var(--wp-accent)] pb-2">
-            <h2 className="text-2xl font-bold">From the Blog</h2>
-            <Link
-              href={`${BASE}/blog`}
-              className="text-[13px] font-semibold text-[var(--wp-accent)] hover:underline"
-            >
-              All posts →
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-6">
-            {posts.slice(0, 2).map((post) => (
-              <article
-                key={post.slug}
-                className="border border-[var(--wp-line)] bg-[var(--wp-surface)] p-6"
-              >
-                <h3 className="text-xl font-bold">
-                  <Link
-                    href={`${BASE}/blog/${post.slug}`}
-                    className="hover:text-[var(--wp-accent)]"
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt={item.imageAlt ?? ""}
+                    fill
+                    sizes="(min-width: 640px) 26vw, 68vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="lc-display grid size-full place-items-center text-6xl"
+                    style={{
+                      backgroundColor: "var(--lc-surface)",
+                      color: "var(--lc-line-strong)",
+                    }}
                   >
-                    {post.title}
-                  </Link>
+                    {item.name.charAt(0)}
+                  </span>
+                )}
+              </div>
+              <div className="mt-5 flex items-baseline justify-between gap-4">
+                <h3 className="text-[1.35rem] leading-tight">{item.name}</h3>
+                <span className="text-[15px] tabular-nums">₱{item.price}</span>
+              </div>
+              <p className="mt-1 text-[14px]" style={{ color: "var(--lc-fg-2)" }}>
+                {item.note}
+              </p>
+              <span
+                aria-hidden
+                className="lc-row-rule mt-4 block h-px"
+                style={{ backgroundColor: "var(--lc-accent)" }}
+              />
+            </article>
+          ))}
+
+          <div aria-hidden className="w-[10vw] shrink-0" />
+        </PinnedStrip>
+      </section>
+
+      {/* 04 — The numbers -------------------------------------------------- */}
+      <section className="mx-auto max-w-[90rem] px-5 py-24 sm:px-10 sm:py-32">
+        <SectionHead index="04" label="The size of it" />
+        <dl className="grid gap-12 sm:grid-cols-3">
+          {[
+            { value: "12", label: "Seats", note: "First come, first served. No bookings." },
+            {
+              value: "8km",
+              label: "To the roastery",
+              note: "Roasted every Tuesday by Mariel.",
+            },
+            { value: "2021", label: "Opened", note: "Same twelve seats ever since." },
+          ].map((stat, index) => (
+            <Reveal key={stat.label} kind="up" stagger={index} as="div">
+              <dt
+                className="lc-display text-[clamp(4rem,9vw,7.5rem)] leading-[0.85]"
+                style={{ color: "var(--lc-accent)" }}
+              >
+                {stat.value}
+              </dt>
+              <dd className="mt-4">
+                <span className="lc-eyebrow" style={{ color: "var(--lc-fg)" }}>
+                  {stat.label}
+                </span>
+                <span
+                  className="mt-2 block text-[15px] leading-relaxed"
+                  style={{ color: "var(--lc-fg-2)" }}
+                >
+                  {stat.note}
+                </span>
+              </dd>
+            </Reveal>
+          ))}
+        </dl>
+      </section>
+
+      {/* 05 — On the grinder ----------------------------------------------- */}
+      <section
+        className="border-y py-20 sm:py-28"
+        style={{ borderColor: "var(--lc-line)", backgroundColor: "var(--lc-surface)" }}
+      >
+        <div className="mx-auto grid max-w-[90rem] items-center gap-12 px-5 sm:px-10 lg:grid-cols-2">
+          <Reveal kind="left">
+            <p className="lc-eyebrow">05 — On the grinder</p>
+            <h2 className="mt-6 text-[clamp(2.25rem,5.5vw,4rem)] leading-[0.95]">
+              A washed Benguet, until it runs out
+            </h2>
+            <p
+              className="mt-6 max-w-md text-[17px] leading-relaxed"
+              style={{ color: "var(--lc-fg-2)" }}
+            >
+              Bright without being sharp. Something floral in the first sip and dried apricot
+              underneath it — and it takes milk far better than last month&rsquo;s Ethiopian
+              did.
+            </p>
+            <Link
+              href={`${BASE}/blog/washed-benguet-on-the-grinder`}
+              className="lc-eyebrow group mt-8 inline-flex items-center gap-2"
+              style={{ color: "var(--lc-accent-text)" }}
+            >
+              Read the write-up
+              <ArrowRight
+                aria-hidden
+                className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+              />
+            </Link>
+          </Reveal>
+
+          <Reveal kind="scale">
+            <div
+              className="ken-burns relative aspect-[5/4] overflow-hidden border"
+              style={{ borderColor: "var(--lc-line)" }}
+            >
+              <Image
+                src={gallery[4].image}
+                alt={gallery[4].alt}
+                fill
+                sizes="(min-width: 1024px) 44vw, 100vw"
+                placeholder="blur"
+                className="object-cover"
+              />
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 06 — Journal ------------------------------------------------------- */}
+      <section className="mx-auto max-w-[90rem] px-5 py-24 sm:px-10 sm:py-32">
+        <SectionHead
+          index="06"
+          label="Journal"
+          action={
+            <Link href={`${BASE}/blog`} className="lc-link lc-eyebrow">
+              Everything we have written
+            </Link>
+          }
+        />
+
+        <div className="grid gap-x-10 gap-y-14 md:grid-cols-2">
+          {posts.slice(0, 2).map((post, index) => (
+            <Reveal key={post.slug} kind="up" stagger={index} as="article">
+              <Link href={`${BASE}/blog/${post.slug}`} className="lc-row group block">
+                <div
+                  className="relative aspect-[16/10] overflow-hidden border"
+                  style={{ borderColor: "var(--lc-line)" }}
+                >
+                  <Image
+                    src={gallery[index].image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 768px) 44vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+                <p className="lc-eyebrow mt-6">
+                  {post.date} · {post.category}
+                </p>
+                <h3 className="mt-3 text-[clamp(1.5rem,2.6vw,2.25rem)] leading-[1.05] transition-colors group-hover:text-[var(--lc-accent-text)]">
+                  {post.title}
                 </h3>
-                <PostMeta
-                  date={post.date}
-                  author="Lumen"
-                  category={post.category}
-                  categoryHref={`${BASE}/blog`}
-                  comments={post.comments.length}
-                  commentsHref={`${BASE}/blog/${post.slug}#respond`}
-                />
-                <p className="mt-3 text-[14.5px] leading-relaxed text-[var(--wp-ink-2)]">
+                <p
+                  className="mt-4 max-w-md text-[15px] leading-relaxed"
+                  style={{ color: "var(--lc-fg-2)" }}
+                >
                   {post.excerpt}
                 </p>
-                <Link
-                  href={`${BASE}/blog/${post.slug}`}
-                  className="mt-4 inline-block border border-[var(--wp-line)] px-4 py-2 text-[12.5px] font-semibold tracking-wide uppercase hover:border-[var(--wp-accent)] hover:text-[var(--wp-accent)]"
-                >
-                  Continue reading
-                </Link>
-              </article>
-            ))}
-          </div>
-        </section>
+              </Link>
+            </Reveal>
+          ))}
+        </div>
+      </section>
 
-        {/* Hours, repeated in the content column the way a theme's page would */}
-        <section className="mt-10">
-          <h2 className="border-b-2 border-[var(--wp-accent)] pb-2 text-2xl font-bold">
-            Hours
-          </h2>
-          <dl className="mt-5 border border-[var(--wp-line)] bg-[var(--wp-surface)] px-6 py-2">
-            {hours.map((entry) => (
-              <div
-                key={entry.day}
-                className="flex items-baseline justify-between gap-4 border-b border-dashed border-[var(--wp-line)] py-3 last:border-b-0"
-              >
-                <dt>{entry.day}</dt>
-                <dd className="text-[14px] tabular-nums">{entry.time}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </WpLayout>
+      {/* 07 — Closing -------------------------------------------------------- */}
+      <section className="mx-auto max-w-[90rem] px-5 sm:px-10">
+        <Reveal as="div" kind="up" className="lc-rule" />
+        <div className="grid gap-10 py-20 lg:grid-cols-2 lg:py-28">
+          <h2 className="text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.9]">Come and sit down</h2>
+          <div>
+            <dl>
+              {hoursRows.map((row) => (
+                <div
+                  key={row.label}
+                  className="flex items-baseline justify-between gap-6 border-b py-3.5"
+                  style={{ borderColor: "var(--lc-line)" }}
+                >
+                  <dt className="text-[15px]" style={{ color: "var(--lc-fg-2)" }}>
+                    {row.label}
+                  </dt>
+                  <dd className="text-[15px] tabular-nums">{row.time}</dd>
+                </div>
+              ))}
+            </dl>
+            <Link
+              href={`${BASE}/visit`}
+              className="group mt-10 inline-flex items-center gap-3 px-8 py-4 text-white"
+              style={{ backgroundColor: "var(--lc-accent)" }}
+            >
+              <span className="lc-eyebrow" style={{ color: "inherit" }}>
+                Plan your visit
+              </span>
+              <ArrowUpRight
+                aria-hidden
+                className="size-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
+            </Link>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

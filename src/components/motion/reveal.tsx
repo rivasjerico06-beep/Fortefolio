@@ -9,6 +9,9 @@ type RevealKind = "up" | "left" | "right" | "scale" | "clip" | "blur";
  * costs no JavaScript.
  *
  * `stagger` offsets the transition so a group animates in sequence.
+ *
+ * `children` is optional: a purely decorative element — a rule that draws
+ * itself in, say — is still worth revealing, and has nothing inside it.
  */
 export function Reveal({
   children,
@@ -17,7 +20,7 @@ export function Reveal({
   as: Tag = "div",
   className,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   kind?: RevealKind;
   stagger?: number;
   as?: ElementType;

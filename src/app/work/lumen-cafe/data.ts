@@ -1,5 +1,4 @@
 import type { StaticImageData } from "next/image";
-import { SERIF, type WpTheme } from "@/components/wp/theme";
 
 import beansBag from "./media/beans-bag.jpg";
 import galBar from "./media/gal-bar.jpg";
@@ -34,53 +33,13 @@ import secKitchen from "./media/sec-kitchen.jpg";
 
 export const BASE = "/work/lumen-cafe";
 
-/** Warm, slightly old-fashioned palette — the sort a café would pick. */
-export const theme: WpTheme = {
-  bg: "#f4efe7",
-  surface: "#ffffff",
-  surfaceAlt: "#f0e8dc",
-  ink: "#2a2018",
-  ink2: "#5c4c3d",
-  line: "#ddd0bd",
-  accent: "#a8551f",
-  accentInk: "#ffffff",
-  headerBg: "#fffdf9",
-  headerInk: "#2a2018",
-  footerBg: "#2a2018",
-  footerInk: "#f0e6d8",
-  headingFont: SERIF,
-};
-
+/** Flat nav — the redesign has no dropdowns, so there is nothing to nest. */
 export const nav = [
-  { label: "Home", href: BASE },
-  {
-    label: "Menu",
-    href: `${BASE}/menu`,
-    children: [
-      { label: "Espresso", href: `${BASE}/menu#espresso` },
-      { label: "Filter coffee", href: `${BASE}/menu#filter` },
-      { label: "Kitchen", href: `${BASE}/menu#kitchen` },
-    ],
-  },
-  {
-    label: "About",
-    href: `${BASE}/about`,
-    children: [
-      { label: "Our story", href: `${BASE}/about#story` },
-      { label: "The roastery", href: `${BASE}/about#roastery` },
-      { label: "The team", href: `${BASE}/about#team` },
-    ],
-  },
-  { label: "Blog", href: `${BASE}/blog` },
+  { label: "Menu", href: `${BASE}/menu` },
+  { label: "About", href: `${BASE}/about` },
+  { label: "Journal", href: `${BASE}/blog` },
   { label: "Visit", href: `${BASE}/visit` },
 ] as const;
-
-export const hours = [
-  { day: "Monday – Thursday", time: "7:00 – 18:00" },
-  { day: "Friday", time: "7:00 – 22:00" },
-  { day: "Saturday", time: "8:00 – 22:00" },
-  { day: "Sunday", time: "8:00 – 16:00" },
-];
 
 export const address = {
   street: "114 Kalayaan Avenue",

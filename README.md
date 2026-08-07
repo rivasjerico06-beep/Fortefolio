@@ -139,7 +139,7 @@ src/
     globals.css      design tokens for both themes
   components/        header, footer, theme toggle, cards, reveal
     motion/          the scroll/animation layer (see below)
-    wp/              the WordPress theme kit the demos are built from
+    wp/              the WordPress theme kit the other three demos are built from
   lib/               site config, project data, cn() helper
 scripts/
   screenshot.mjs     the visual smoke test
@@ -150,13 +150,18 @@ scripts/
 The `(site)` route group exists so the demos can opt out of the portfolio
 header and footer while still sharing the root `<html>` document.
 
-## The demo sites are WordPress layouts
+## The demo sites
 
-All four demos reproduce a layout clients recognise — a classic business theme,
-a theme with a pricing plugin, a wp-admin plugin screen, and a WooCommerce shop
-archive — but they are **static Next.js, not PHP**, and the case studies say so.
-That is the point rather than a caveat: the familiar layout without the weight
-that normally comes with it.
+**Lumen Café is an art-directed editorial site.** It was designed in Figma Make
+from the brief in [`design/figma-prompts/lumen-cafe.md`](design/figma-prompts/lumen-cafe.md)
+and rebuilt here — see [its own section below](#lumen-café).
+
+The other three still reproduce a layout clients recognise — a theme with a
+pricing plugin, a wp-admin plugin screen, and a WooCommerce shop archive — but
+they are **static Next.js, not PHP**, and the case studies say so. That is the
+point rather than a caveat: the familiar layout without the weight that normally
+comes with it. Each is queued for the same treatment Lumen just had; the briefs
+are written and waiting in `design/figma-prompts/`.
 
 They share one kit in [`src/components/wp/`](src/components/wp/). Each demo
 passes a `WpTheme` of CSS custom properties, which is how WordPress itself works
@@ -167,7 +172,38 @@ The nav dropdowns are CSS-only and the mobile menu and FAQ are native
 `<details>`, so the chrome ships **no JavaScript at all**. Headings use a system
 serif, so no webfont is downloaded for the period look.
 
-### Photography in the Lumen Café demo
+### Lumen Café
+
+An editorial site rather than a theme rebuild: full-bleed photography, display
+type, a pinned horizontal strip, and a live open/closed indicator. Three things
+in it are worth knowing about.
+
+**The palette is measured, not eyeballed.** The first Figma pass produced
+secondary text at 3.54:1 and accent links at 3.85:1 against the bone background —
+both under the 4.5:1 the brief asked for. The corrected tokens are in the
+`.lumen` block of [`globals.css`](src/app/globals.css), and the accent exists in
+two tones because one colour cannot be both a legible body-text colour and a rich
+fill. Do not collapse them back into one.
+
+**The open/closed state never renders on the server.** `getOpenState` in
+[`hours.ts`](src/app/work/lumen-cafe/hours.ts) is pure and takes `now` as an
+argument, and the indicator resolves through `useSyncExternalStore` with a server
+snapshot of "unknown". Rendering it during the build would stamp the build-time
+answer into static HTML — a café permanently claiming to be open at 2am. The same
+applies to the "today" marker in the hours table.
+
+That file also carries a comment about weekday lookups keyed on the *narrow*
+format. Do not switch back to it: `Intl` gives "S" for both Sunday and Saturday
+and "T" for both Tuesday and Thursday, so a lookup table keyed on it silently
+collides and resolves two days a week to the wrong row.
+
+**Reads and writes are behind seams.** [`api.ts`](src/app/work/lumen-cafe/api.ts)
+is async even though it resolves local data, so moving the menu and journal to a
+CMS touches that file and nothing else. The enquiry form posts to a Server Action
+in [`actions.ts`](src/app/work/lumen-cafe/actions.ts) rather than a plain
+function, which keeps every post body and image import out of the client bundle.
+
+#### Photography
 
 The café demo carries real photographs, in
 [`src/app/work/lumen-cafe/media/`](src/app/work/lumen-cafe/media/). They are
@@ -189,12 +225,16 @@ updating the imports at the top of
 text lives beside each one, so it is hard to change a picture and forget its
 description.
 
-The menu page's motion — the slow pan on featured images, the steam over the
-page title, the turning "on the grinder" stamp, the notice bar and the gallery
-strip — is all CSS keyframes on decoration only. That is deliberate: the single
-`prefers-reduced-motion` rule at the foot of
-[`src/app/globals.css`](src/app/globals.css) stops every one of them at once,
-and none of them can hide content the way a JavaScript-driven reveal could.
+#### Motion
+
+The looping motion — the slow pan on featured images, the notice bar, the
+breathing open/closed dot, the scroll cue, the wash behind the statement — is all
+CSS keyframes on decoration only, and no animation library is involved. That is
+deliberate: the single `prefers-reduced-motion` rule at the foot of
+[`src/app/globals.css`](src/app/globals.css) stops every one of them at once, and
+none of them can hide content the way a JavaScript-driven reveal could. The
+pinned horizontal strip reuses the same scroll module as the portfolio's gallery
+via [`PinnedStrip`](src/components/motion/pinned-strip.tsx).
 
 **One trap worth knowing about:** `src/app/work/atlas/charts.tsx` reads
 `--series-*`, `--line`, `--ink-*` and `--surface` from the global theme. Because
