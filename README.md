@@ -192,7 +192,7 @@ snapshot of "unknown". Rendering it during the build would stamp the build-time
 answer into static HTML — a café permanently claiming to be open at 2am. The same
 applies to the "today" marker in the hours table.
 
-That file also carries a comment about weekday lookups keyed on the *narrow*
+That file also carries a comment about weekday lookups keyed on the _narrow_
 format. Do not switch back to it: `Intl` gives "S" for both Sunday and Saturday
 and "T" for both Tuesday and Thursday, so a lookup table keyed on it silently
 collides and resolves two days a week to the wrong row.
