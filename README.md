@@ -1,36 +1,257 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ECOmissions
 
-## Getting Started
+A web-developer portfolio for **Jerico Rivas**, built with Next.js 16,
+TypeScript, and Tailwind CSS v4.
 
-First, run the development server:
+The premise: every byte you ship burns someone else's electricity, so the site
+is built to a page-weight budget and then _proves it_ — the hero and the pinned
+scroll scene both read this page's real transfer size out of the Performance
+API as it loads. Nothing about that number is typed in by hand.
+
+The other half: **every case study links to a real, working demo site** hosted
+in this same app under `/work/<slug>`. Nothing is a screenshot — you can filter
+the catalogue, toggle the pricing, and read the dashboard.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command                         | What it does                                           |
+| ------------------------------- | ------------------------------------------------------ |
+| `npm run dev`                   | Dev server with Turbopack and hot reload               |
+| `npm run build`                 | Production build (all routes prerender to static HTML) |
+| `npm start`                     | Serve the production build                             |
+| `npm run lint`                  | ESLint with the Next.js config                         |
+| `npm run typecheck`             | TypeScript with no emit                                |
+| `npm run format`                | Prettier, including Tailwind class sorting             |
+| `npm run shots`                 | Visual smoke test — see below                          |
+| `npm run test:demos`            | Interaction test — drives the demos for real           |
+| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible       |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Visual smoke test
 
-## Learn More
+`npm run shots` drives a real Chromium over every route with Playwright and
+fails the run on console errors, non-200 responses, or horizontal overflow at
+375px wide. It also writes desktop, mobile, and dark-mode screenshots to
+`.screenshots/`.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build && npm start     # terminal one
+npm run shots                  # terminal two
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+It runs with reduced motion forced on, because the scroll reveal is a CSS
+scroll-driven animation — a full-page capture would otherwise freeze every
+off-screen section at `opacity: 0`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Interaction test
 
-## Deploy on Vercel
+`npm run test:demos` backs up the claim that the demos are real. It filters and
+sorts the Verde catalogue, adds to the cart and checks the arithmetic, flips the
+Nimbus pricing toggle, opens the FAQ, hovers a chart to get a tooltip, and
+confirms the theme toggle survives a reload. Same setup as above — build, start,
+then run it against the running server.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## The motion layer
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Everything animated lives in [`src/components/motion/`](src/components/motion/).
+
+| Piece                    | What it does                                                                                       |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| `scroll-engine.tsx`      | Lenis smooth scrolling + the one IntersectionObserver that fires every reveal                      |
+| `reveal.tsx`             | `<Reveal>` (fade/slide/clip/blur/scale, with stagger) and `<WordRise>` (per-word masked hero text) |
+| `scrub-text.tsx`         | Pinned statement whose words light up one by one as you scroll                                     |
+| `horizontal-gallery.tsx` | Pinned section whose work panels slide sideways as you scroll down                                 |
+| `weight-scene.tsx`       | Pinned scene where bars fill and numbers count from scroll progress                                |
+| `stack-cards.tsx`        | Cards that pile up on each other — pure CSS `sticky`, no JavaScript                                |
+| `parallax.tsx`           | Moves its children at a different rate to the page                                                 |
+| `magnetic.tsx`           | Buttons that lean toward the cursor                                                                |
+| `counter.tsx`            | Numbers that count up when scrolled into view                                                      |
+| `marquee.tsx`            | Seamless CSS ticker                                                                                |
+| `scroll-progress.tsx`    | Hairline progress bar under the header                                                             |
+| `page-weight.tsx`        | The live "this page weighs N KB" readout                                                           |
+
+All the scroll-driven scenes share [`src/lib/scroll.ts`](src/lib/scroll.ts) —
+**one** `scroll` listener and **one** animation frame for the whole page, with
+every scene painting in the same batched frame. Adding a sixth scene does not
+add a sixth listener.
+
+**The rule that governs all of it: content is visible in the server HTML, and
+the hidden starting state only exists under a `.js` class** that an inline head
+script adds before the body paints. No JavaScript, a failed hydration, or
+`prefers-reduced-motion` all yield a complete, readable page. The head script
+also arms a 2.5-second failsafe that strips `.js` again if the engine never
+mounts, so a crash cannot leave the site blank.
+
+`node scripts/motion-check.mjs` exists to keep that honest. It asserts the hero
+settles at full opacity with JS on, that everything is visible with JS **off**,
+that reduced motion leaves zero elements under full opacity, and that the pinned
+scene's progress really is driven by scroll position.
+
+### How the pinned scroll scene works
+
+This is the pattern behind most "product page" scroll animations, and it is
+only three ideas:
+
+1. A tall outer wrapper (`h-[280vh]`) reserves the scroll distance.
+2. An inner `sticky top-0 h-screen` panel stays put while you scroll past it.
+3. The wrapper's `getBoundingClientRect().top` becomes a 0→1 progress number,
+   and every animated property is a function of it.
+
+Progress is written to the DOM as CSS custom properties, **not** React state —
+a state update per scroll frame would re-render the subtree 60 times a second.
+
+## Making it yours
+
+Almost everything personal lives in **[`src/lib/site-config.ts`](src/lib/site-config.ts)** —
+name, role, tagline, email, social links, nav, skills, and services. Edit that
+one file and the whole site follows.
+
+Case studies live in **[`src/lib/projects.ts`](src/lib/projects.ts)**. Each entry
+drives its card, its case-study page at `/projects/<slug>`, and its footer link.
+If you add a project, add a matching demo page at `src/app/work/<slug>/page.tsx`
+or drop the "Live demo" link.
+
+Before deploying, set `siteConfig.url` to your real domain — it feeds
+`metadataBase`, `sitemap.xml`, and `robots.txt`.
+
+## Structure
+
+```
+src/
+  app/
+    (site)/          portfolio pages — share the header, footer, and theme
+      page.tsx       home
+      about/         about
+      projects/      work index and [slug] case studies
+      contact/       contact form
+    work/            the demo sites — no portfolio chrome, own identity each
+      lumen-cafe/    local-business marketing site
+      nimbus/        SaaS landing page with interactive pricing
+      atlas/         analytics dashboard, charts hand-built in SVG
+      verde/         storefront with live filtering and a cart
+    layout.tsx       <html>, fonts, pre-paint theme script
+    globals.css      design tokens for both themes
+  components/        header, footer, theme toggle, cards, reveal
+    motion/          the scroll/animation layer (see below)
+    wp/              the WordPress theme kit the demos are built from
+  lib/               site config, project data, cn() helper
+scripts/
+  screenshot.mjs     the visual smoke test
+  interactions.mjs   the demo interaction test
+  motion-check.mjs   proves the animations can never hide content
+```
+
+The `(site)` route group exists so the demos can opt out of the portfolio
+header and footer while still sharing the root `<html>` document.
+
+## The demo sites are WordPress layouts
+
+All four demos reproduce a layout clients recognise — a classic business theme,
+a theme with a pricing plugin, a wp-admin plugin screen, and a WooCommerce shop
+archive — but they are **static Next.js, not PHP**, and the case studies say so.
+That is the point rather than a caveat: the familiar layout without the weight
+that normally comes with it.
+
+They share one kit in [`src/components/wp/`](src/components/wp/). Each demo
+passes a `WpTheme` of CSS custom properties, which is how WordPress itself works
+— one theme framework, different customiser settings — so four different-looking
+sites run off the same components.
+
+The nav dropdowns are CSS-only and the mobile menu and FAQ are native
+`<details>`, so the chrome ships **no JavaScript at all**. Headings use a system
+serif, so no webfont is downloaded for the period look.
+
+### Photography in the Lumen Café demo
+
+The café demo carries real photographs, in
+[`src/app/work/lumen-cafe/media/`](src/app/work/lumen-cafe/media/). They are
+**self-hosted, not hotlinked**, for three reasons: the demo makes no
+third-party request, it still works with no network, and a static `import`
+gives Next the file's real dimensions at build time — which is what lets
+`next/image` reserve the correct box and generate the blur placeholder, so
+nothing shifts as the page loads.
+
+Only the featured image sets `preload`. Everything else lazy-loads on approach,
+and each `<Image>` declares `sizes` so a phone downloads a phone-sized file
+rather than a desktop one.
+
+Photographs are from [Unsplash](https://unsplash.com), used under the
+[Unsplash licence](https://unsplash.com/license), which permits commercial use
+without attribution. Replacing them means dropping new files in that folder and
+updating the imports at the top of
+[`src/app/work/lumen-cafe/data.ts`](src/app/work/lumen-cafe/data.ts) — the alt
+text lives beside each one, so it is hard to change a picture and forget its
+description.
+
+The menu page's motion — the slow pan on featured images, the steam over the
+page title, the turning "on the grinder" stamp, the notice bar and the gallery
+strip — is all CSS keyframes on decoration only. That is deliberate: the single
+`prefers-reduced-motion` rule at the foot of
+[`src/app/globals.css`](src/app/globals.css) stops every one of them at once,
+and none of them can hide content the way a JavaScript-driven reveal could.
+
+**One trap worth knowing about:** `src/app/work/atlas/charts.tsx` reads
+`--series-*`, `--line`, `--ink-*` and `--surface` from the global theme. Because
+the wp-admin screen is pinned to a fixed light palette, those variables are
+re-declared on the Atlas demo's root with the light steps of the validated
+categorical palette. Remove that block and the charts inherit dark-mode steps
+against a light panel, quietly breaking their contrast validation.
+
+## Notes on some deliberate choices
+
+**Theme.** A small script in `<head>` stamps `data-theme` on `<html>` before
+first paint, so there is no flash of the wrong theme. `ThemeToggle` holds no
+React state — the current theme lives on the DOM element that actually changes,
+which means server and client markup are identical and there is no hydration
+mismatch.
+
+**Scroll reveal.** CSS transitions triggered by one shared IntersectionObserver,
+rather than an animation library. The first attempt used a motion library, and
+screenshots caught the flaw immediately: it ships `opacity: 0` in the server
+HTML, so every section below the fold was blank until its JavaScript ran. The
+`.js`-gated approach documented above fixes that at the root. Printing is also
+explicitly forced visible, since a printed page has no scroll to trigger
+anything.
+
+**Charts.** Hand-written SVG, no charting library. The categorical palette is
+validated for colour-vision deficiency, each chart has one axis (never two
+scales merged), every series carries a legend plus a direct label so identity is
+never colour-alone, and there is a table view of the same data.
+
+**Contact form.** Validates client-side, then hands the composed message to the
+visitor's mail client — so it works with no backend and no API key. To send
+server-side instead, replace `handleSubmit` in
+[`src/components/contact-form.tsx`](src/components/contact-form.tsx) with a
+Server Action that calls Resend, Postmark, or similar.
+
+## Dependency audit
+
+`npm audit --omit=dev` reports **0 vulnerabilities**. Production dependencies
+are clean.
+
+`npm audit` (including dev) reports findings in `brace-expansion`, reached only
+through `minimatch@3` inside ESLint and three of its plugins. There is no fix
+available: the patch exists only in the `brace-expansion@5` line, which requires
+`minimatch@10`, which the plugins pinned by `eslint-config-next` do not use.
+Forcing it breaks ESLint outright. The exposure is a denial of service when
+expanding attacker-controlled glob patterns — in this project the only patterns
+are the ones in the repo's own lint config, and none of it ships to the browser.
+
+`package.json` does carry overrides that fix the findings that _were_ fixable:
+`sharp` and `postcss` are pulled forward past their advisories, rather than
+accepting npm's suggestion to downgrade Next.js to 9.3.3.
+
+## Deploying
+
+The whole site prerenders to static HTML, so any static host works. On Vercel:
+
+```bash
+npm i -g vercel
+vercel
+```

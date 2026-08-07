@@ -1,26 +1,514 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* The theme script stamps data-theme="light" | "dark" on <html> before paint,
+   so every rule below can key off that single attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f5f4ee;
+  --surface: #fcfbf7;
+  --surface-2: #eceadf;
+  --ink: #10140f;
+  --ink-2: #4d5449;
+  --ink-3: #868c7f;
+  --line: #dedbcd;
+  --line-strong: #c3c0ae;
+
+  --accent: #1a6b47;
+  --accent-hover: #14563a;
+  --accent-ink: #ffffff;
+  --accent-wash: rgba(26, 107, 71, 0.09);
+
+  /* Signal colour — used only for small highlights, never for body text */
+  --spark: #a8e34a;
+  --spark-ink: #10140f;
+
+  /* Chart series — validated categorical slots (light steps) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --success: #006300;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0a0d0a;
+  --surface: #121711;
+  --surface-2: #1c221b;
+  --ink: #f2f5ef;
+  --ink-2: #b3bcae;
+  --ink-3: #7c857a;
+  --line: #232a22;
+  --line-strong: #333b31;
+
+  --accent: #5fd39b;
+  --accent-hover: #7ce0b0;
+  --accent-ink: #08120c;
+  --accent-wash: rgba(95, 211, 155, 0.12);
+
+  --spark: #c2f04a;
+  --spark-ink: #10140f;
+
+  /* Same hues, re-stepped for the dark surface — not an inverted flip */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --success: #0ca30c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-spark: var(--spark);
+  --color-spark-ink: var(--spark-ink);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-success: var(--success);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   Animation system
+
+   Every animated element is VISIBLE in the server HTML. The hidden starting
+   state only exists under `.js`, a class an inline head script adds before the
+   body paints. So: no JavaScript (or a script that fails) leaves a complete,
+   readable page; reduced-motion users get the same. Nothing here can strand
+   content at opacity 0.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Starting states — scoped to .js so they never reach a no-JS reader */
+  .js [data-reveal] {
+    opacity: 0;
+    will-change: opacity, transform;
+    transition:
+      opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+      clip-path 1s cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: calc(var(--stagger, 0) * 85ms);
+  }
+
+  .js [data-reveal="up"] {
+    transform: translate3d(0, 28px, 0);
+  }
+  .js [data-reveal="left"] {
+    transform: translate3d(-28px, 0, 0);
+  }
+  .js [data-reveal="right"] {
+    transform: translate3d(28px, 0, 0);
+  }
+  .js [data-reveal="scale"] {
+    transform: scale(0.94);
+  }
+  .js [data-reveal="clip"] {
+    opacity: 1;
+    clip-path: inset(0 0 100% 0);
+  }
+  .js [data-reveal="blur"] {
+    filter: blur(10px);
+    transform: translate3d(0, 16px, 0);
+    transition-property: opacity, transform, filter;
+  }
+
+  /* Resting state — added by the intersection observer */
+  .js [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: inset(0 0 0 0);
+  }
+
+  /* Per-word hero animation */
+  .js .word-rise > span > span {
+    display: inline-block;
+    transform: translate3d(0, 110%, 0) rotate(4deg);
+    transition:
+      transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--w, 0) * 62ms);
+    opacity: 0;
+  }
+  .js .word-rise.is-in > span > span {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* The mask that makes words appear to rise out of the line above */
+.word-rise > span {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.06em;
+}
+
+/* Scrub text -------------------------------------------------------------
+   Words light up one after another as you scroll through the statement.
+   `--p` defaults to 1, so with no JavaScript every word is already lit. */
+.scrub-word {
+  opacity: max(0.16, calc(var(--p, 1) * var(--n) - var(--i)));
+  transition: opacity 120ms linear;
+}
+
+/* Horizontal scroll gallery ----------------------------------------------
+   Default (no JS, or reduced motion) is an ordinary horizontal scroller, so
+   the panels are always reachable. `.js` upgrades it to a pinned scene whose
+   track is driven by scroll position. */
+.hscene-panel {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.hscene-track {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+  padding-inline: 1.25rem;
+  /* Must size to its content, not shrink to the panel — otherwise there is
+     nothing to scroll through and the scene has zero travel. */
+  width: max-content;
+  flex-shrink: 0;
+}
+
+.js .hscene {
+  height: var(--scene-height, 300vh);
+}
+.js .hscene-panel {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  align-items: center;
+  overflow: hidden;
+}
+.js .hscene-track {
+  transform: translate3d(calc(var(--x, 0) * -1px), 0, 0);
+  will-change: transform;
+}
+
+/* Sticky card stack — pure CSS, no scroll handler involved ---------------- */
+.stack-item {
+  position: sticky;
+}
+
+/* ==========================================================================
+   WordPress theme kit
+
+   The demo sites under /work are styled as WordPress theme installs. Everything
+   here reads the `--wp-*` custom properties that `themeVars()` puts on each
+   demo's root, so one set of rules skins four different-looking sites.
+   ========================================================================== */
+
+.wp-root {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.wp-root h1,
+.wp-root h2,
+.wp-root h3,
+.wp-root h4 {
+  font-family: var(--wp-heading-font);
+  line-height: 1.25;
+}
+
+/* Widget titles — small caps rule above the widget body */
+.wp-widget-title {
+  border-bottom: 2px solid var(--wp-accent);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.9rem;
+  font-family: var(--wp-heading-font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wp-ink);
+}
+.wp-widget-title--footer {
+  color: inherit;
+  border-bottom-color: currentColor;
+  opacity: 0.95;
+}
+
+/* The bordered list every stock widget renders */
+.wp-linklist li {
+  border-bottom: 1px solid var(--wp-line);
+  padding: 0.45rem 0;
+}
+.wp-linklist li:last-child {
+  border-bottom: 0;
+}
+.wp-linklist a {
+  color: var(--wp-ink-2);
+}
+.wp-linklist a:hover {
+  color: var(--wp-accent);
+  text-decoration: underline;
+}
+
+/* CSS-only dropdowns. No JavaScript, and they open on keyboard focus too. */
+.wp-submenu {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 140ms;
+}
+.wp-nav-item:hover > .wp-submenu,
+.wp-nav-item:focus-within > .wp-submenu {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.wp-mobile-nav summary::-webkit-details-marker {
+  display: none;
+}
+.wp-mobile-nav[open] summary svg {
+  transform: rotate(180deg);
+}
+
+/* Post / page body copy — the "entry content" area */
+.wp-prose {
+  color: var(--wp-ink-2);
+}
+.wp-prose > * + * {
+  margin-top: 1.1rem;
+}
+.wp-prose h2 {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--wp-ink);
+}
+.wp-prose h3 {
+  margin-top: 1.6rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--wp-ink);
+}
+.wp-prose a {
+  color: var(--wp-accent);
+  text-decoration: underline;
+}
+.wp-prose strong {
+  color: var(--wp-ink);
+}
+.wp-prose blockquote {
+  border-left: 4px solid var(--wp-accent);
+  padding: 0.35rem 0 0.35rem 1.1rem;
+  font-style: italic;
+}
+.wp-prose ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+}
+.wp-prose ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+}
+.wp-prose li + li {
+  margin-top: 0.35rem;
+}
+
+/* Marquee ---------------------------------------------------------------- */
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 34s) linear infinite;
+}
+.marquee-host:hover .marquee {
+  animation-play-state: paused;
+}
+@keyframes marquee-scroll {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Slow ambient drift for background blobs -------------------------------- */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3%, -4%, 0) scale(1.08);
+  }
+}
+.drift {
+  animation: drift 18s ease-in-out infinite;
+}
+
+/* Link underline that wipes in from the left ----------------------------- */
+.link-wipe {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1px;
+  transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-wipe:hover {
+  background-size: 100% 1px;
+}
+
+/* ==========================================================================
+   Café embellishments
+
+   The sort of thing a theme's "animations" toggle ships with: a slow pan on
+   featured images, steam over the page title, a stamp that turns, a notice bar
+   that scrolls. Every one is a plain keyframe animation on decoration only, so
+   the reduced-motion rule at the foot of this file stops all of them at once
+   and none of them can strand content the way a JS-driven reveal could.
+   ========================================================================== */
+
+/* Featured images pan slowly. They start scaled up so the pan never exposes an
+   edge; at rest — reduced motion, print — they simply sit unscaled. */
+@keyframes ken-burns {
+  0%,
+  100% {
+    transform: scale(1.08) translate3d(-1.5%, 1%, 0);
+  }
+  50% {
+    transform: scale(1.16) translate3d(1.5%, -1.2%, 0);
+  }
+}
+.ken-burns img {
+  animation: ken-burns 30s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Steam: three wisps on staggered loops. Decorative, and they both start and
+   end invisible, so switching the animation off simply removes them. */
+@keyframes steam-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 3px, 0) scale(0.7);
+  }
+  25% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(3px, -15px, 0) scale(1.6);
+  }
+}
+.steam span {
+  opacity: 0;
+  animation: steam-rise 3.6s ease-out infinite;
+}
+.steam span:nth-child(2) {
+  animation-delay: 1.2s;
+}
+.steam span:nth-child(3) {
+  animation-delay: 2.4s;
+}
+
+/* The "on the grinder" stamp turns once every half minute. */
+@keyframes stamp-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.stamp-turn {
+  animation: stamp-turn 32s linear infinite;
+}
+
+/* The open-now dot in the notice bar. */
+@keyframes soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+.soft-pulse {
+  animation: soft-pulse 2.4s ease-in-out infinite;
+}
+
+/* Menu rows: the thumbnail eases in under the cursor, and a printed-menu dot
+   leader joins the dish to its price. */
+.menu-row img {
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.menu-row:hover img {
+  transform: scale(1.09);
+}
+.dot-leader {
+  flex: 1 1 auto;
+  align-self: end;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px dotted var(--wp-line);
+}
+
+/* Printing has no scroll and no hover — show everything, plainly */
+@media print {
+  [data-reveal],
+  .word-rise > span > span {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+  }
+  .marquee,
+  .ken-burns img,
+  .steam span,
+  .stamp-turn,
+  .soft-pulse {
+    animation: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
