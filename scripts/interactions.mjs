@@ -185,8 +185,19 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok("payment fields are disabled, not fake", await page.locator("#co-card").isDisabled());
 
   await page.getByRole("button", { name: "Place order" }).click();
-  await page.waitForSelector("h1", { timeout: 20000 });
-  await page.waitForTimeout(1000);
+
+  // Not waitForSelector("h1") — the checkout page already has one, so that
+  // resolves instantly and never waits for the round trip. Wait for the
+  // heading to actually become the confirmation.
+  const confirmed = await page
+    .waitForFunction(
+      () => document.querySelector("h1")?.textContent?.trim().startsWith("Order "),
+      null,
+      { timeout: 30000 },
+    )
+    .then(() => true)
+    .catch(() => false);
+  ok("order confirmation appears", confirmed);
 
   const heading = (await page.locator("h1").first().innerText()).trim();
   ok("order is placed and referenced", heading.startsWith("Order LUM-"), heading);
