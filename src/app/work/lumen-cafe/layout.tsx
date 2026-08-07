@@ -2,6 +2,7 @@ import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { DemoBar } from "@/components/demo-bar";
 import { LumenFooter, NoticeBar } from "./chrome";
 import { LumenHeader } from "./nav";
+import { CartDrawer } from "./shop/cart";
 
 /**
  * Chrome shared by every Lumen page.
@@ -40,6 +41,10 @@ export default function LumenLayout({ children }: { children: React.ReactNode })
       <main className="flex-1">{children}</main>
 
       <LumenFooter />
+
+      {/* Lives in the layout so the basket is reachable from every page and
+          survives navigation between them. */}
+      <CartDrawer />
     </div>
   );
 }

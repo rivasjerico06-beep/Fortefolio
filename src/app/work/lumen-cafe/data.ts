@@ -36,6 +36,7 @@ export const BASE = "/work/lumen-cafe";
 /** Flat nav — the redesign has no dropdowns, so there is nothing to nest. */
 export const nav = [
   { label: "Menu", href: `${BASE}/menu` },
+  { label: "Shop", href: `${BASE}/shop` },
   { label: "About", href: `${BASE}/about` },
   { label: "Journal", href: `${BASE}/blog` },
   { label: "Visit", href: `${BASE}/visit` },

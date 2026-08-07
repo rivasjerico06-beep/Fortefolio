@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/site-url";
 import { projects } from "@/lib/projects";
 import { BASE as LUMEN, POSTS_PER_PAGE, posts } from "./work/lumen-cafe/data";
+import { products } from "./work/lumen-cafe/shop/catalog";
 
 /**
  * Every page that should be discoverable, at its own address.
@@ -40,6 +41,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.3,
     })),
     ...posts.map((post) => ({ path: `${LUMEN}/blog/${post.slug}`, priority: 0.4 })),
+
+    // The shop. Checkout is deliberately absent — it is noindex, and a basket
+    // is per-visitor, so there is nothing there for a crawler to find.
+    { path: `${LUMEN}/shop`, priority: 0.6 },
+    ...products.map((product) => ({ path: `${LUMEN}/shop/${product.slug}`, priority: 0.5 })),
   ];
 
   return routes.map(({ path, priority }) => ({

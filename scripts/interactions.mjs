@@ -91,6 +91,121 @@ await page
 await page.waitForTimeout(250);
 ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1).isVisible());
 
+// --- Lumen: the shop, end to end --------------------------------------------
+// The whole point of the shop is that it works, so this walks a real purchase:
+// filter, pick a variant, add, navigate away, reload, check out, and confirm the
+// server's own total. Prices are never sent from the browser, so the number on
+// the confirmation is the one that matters.
+{
+  const LUMEN = `${BASE}/work/lumen-cafe`;
+  const showing = async () =>
+    (await page.locator('p:has-text("Showing")').first().innerText()).toLowerCase();
+  const basket = () =>
+    page.locator('header button[aria-label*="asket"]').first().getAttribute("aria-label");
+
+  await page.goto(`${LUMEN}/shop`, { waitUntil: "networkidle" });
+  ok("lumen shop lists the catalogue", (await showing()).includes("10 of 10"), await showing());
+
+  await page.getByRole("button", { name: "Brewing", exact: true }).click();
+  await page.waitForTimeout(250);
+  ok(
+    "category filter narrows the shop",
+    (await showing()).includes("2 of 10"),
+    await showing(),
+  );
+
+  await page.getByRole("button", { name: "All", exact: true }).click();
+  await page.getByLabel("Sort products").selectOption("price-asc");
+  await page.waitForTimeout(250);
+  const cheapest = await page.locator("ul li.lc-row span.tabular-nums").first().innerText();
+  ok("sorting puts the cheapest first", cheapest.trim() === "₱390", cheapest.trim());
+
+  // A sold-out product must not be buyable
+  await page.goto(`${LUMEN}/shop/sidama-natural`, { waitUntil: "networkidle" });
+  ok(
+    "sold-out product has no add button",
+    (await page.locator('button:has-text("Add to basket")').count()) === 0,
+  );
+
+  // A variant with a price delta must move the price
+  await page.goto(`${LUMEN}/shop/washed-benguet`, { waitUntil: "networkidle" });
+  const basePrice = (await page.locator("p.tabular-nums").first().innerText()).trim();
+  await page.getByRole("button", { name: "1kg", exact: false }).first().click();
+  await page.waitForTimeout(200);
+  const sizedPrice = (await page.locator("p.tabular-nums").first().innerText()).trim();
+  ok(
+    "size variant changes the price",
+    basePrice !== sizedPrice,
+    `${basePrice} -> ${sizedPrice}`,
+  );
+
+  await page.getByRole("button", { name: "Add to basket" }).click();
+  await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
+  ok("adding opens the basket drawer", true);
+
+  await page.locator('[role="dialog"] button:has-text("Close")').click();
+  await page.goto(`${LUMEN}/shop/lumen-mug`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Add to basket" }).click();
+  await page.waitForTimeout(400);
+  await page.locator('[role="dialog"] button:has-text("Close")').click();
+
+  await page.goto(`${LUMEN}/menu`, { waitUntil: "networkidle" });
+  ok("basket survives navigation", (await basket()).includes("2 items"), await basket());
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForTimeout(500);
+  ok("basket survives a reload", (await basket()).includes("2 items"), await basket());
+
+  await page.goto(`${LUMEN}/checkout`, { waitUntil: "networkidle" });
+  const summaryTotal = (await page.locator("aside dd.tabular-nums").last().innerText()).trim();
+
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForTimeout(250);
+  ok(
+    "checkout blocks an empty name",
+    (await page.locator('[role="alert"]').first().innerText()).includes("name"),
+  );
+
+  await page.fill("#co-name", "Jerico Rivas");
+  await page.fill("#co-email", "nope");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForTimeout(250);
+  ok(
+    "checkout blocks a malformed email",
+    (await page.locator('[role="alert"]').first().innerText()).includes("email"),
+  );
+
+  await page.fill("#co-email", "jerico@example.com");
+  await page.fill("#co-phone", "09171234567");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForTimeout(300);
+  await page.fill("#co-line1", "114 Kalayaan Avenue");
+  await page.fill("#co-city", "Makati");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForTimeout(300);
+  ok("payment fields are disabled, not fake", await page.locator("#co-card").isDisabled());
+
+  await page.getByRole("button", { name: "Place order" }).click();
+  await page.waitForSelector("h1", { timeout: 20000 });
+  await page.waitForTimeout(1000);
+
+  const heading = (await page.locator("h1").first().innerText()).trim();
+  ok("order is placed and referenced", heading.startsWith("Order LUM-"), heading);
+
+  // Scoped to the confirmation's own list — the footer has an hours table too
+  const confirmedTotal = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll("main dl > div")];
+    const last = rows[rows.length - 1];
+    return last?.querySelector("dd")?.textContent?.trim() ?? "";
+  });
+  ok(
+    "server's total matches the basket",
+    confirmedTotal === summaryTotal,
+    `basket ${summaryTotal} vs confirmation ${confirmedTotal}`,
+  );
+
+  ok("basket is emptied after ordering", (await basket()).includes("empty"), await basket());
+}
+
 // --- Portfolio: theme toggle persists ---------------------------------------
 await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 const before = await page.evaluate(() => document.documentElement.dataset.theme);

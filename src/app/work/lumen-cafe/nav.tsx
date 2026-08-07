@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { BASE, nav } from "./data";
 import { getOpenState, openingHours } from "./hours";
+import { CartButton } from "./shop/cart";
 
 /* ---------------------------------------------------------------------------
    Open / closed indicator
@@ -108,19 +109,23 @@ export function LumenHeader() {
           ))}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-7 md:flex">
           <OpenIndicator />
+          <CartButton />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-expanded={menuOpen}
-          className="lc-eyebrow inline-flex items-center gap-2 md:hidden"
-        >
-          <Menu className="size-4" aria-hidden />
-          Menu
-        </button>
+        <div className="flex items-center gap-5 md:hidden">
+          <CartButton />
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-expanded={menuOpen}
+            className="lc-eyebrow inline-flex items-center gap-2"
+          >
+            <Menu className="size-4" aria-hidden />
+            Menu
+          </button>
+        </div>
       </div>
 
       {/* Full-screen overlay, phones only */}

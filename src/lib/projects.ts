@@ -28,7 +28,7 @@ export const projects: readonly Project[] = [
     name: "Lumen Café",
     kind: "Editorial site, designed then built",
     summary:
-      "An art-directed café site — full-bleed photography, scroll-driven type, a live open/closed indicator — built to a page-weight budget with no animation library.",
+      "An art-directed café site with a working shop — variants, a basket that survives navigation, and a checkout that reprices on the server. No payment provider, by design.",
     year: "2026",
     stack: ["Next.js", "Tailwind CSS", "Server Components"],
     accent: "#c8551b",
@@ -41,6 +41,7 @@ export const projects: readonly Project[] = [
       "Drive every animation with CSS keyframes and one shared IntersectionObserver, so a single reduced-motion rule stops all of it and no content can be stranded invisible.",
       "Compute the open/closed state from a pure function that takes the time as an argument, rendered only after mount — server-rendering it would bake the build-time answer into the HTML.",
       "Put every read behind an async accessor and every write behind a Server Action, so connecting a real CMS and inbox changes those files and nothing else.",
+      "Keep the basket in a module-level store rather than React state, so it survives navigation and reloads — and reprice the whole order on the server at checkout, because a cart is client state and client state is editable by whoever holds it.",
     ],
     outcome: [
       { label: "Animation library", value: "0KB", note: "CSS keyframes and one observer" },
@@ -49,7 +50,11 @@ export const projects: readonly Project[] = [
         value: "4",
         note: "found by measuring, not by eye",
       },
-      { label: "Pages prerendered static", value: "11", note: "including every article" },
+      {
+        label: "Prices trusted from the browser",
+        value: "0",
+        note: "checkout reprices from the catalogue",
+      },
     ],
   },
   {

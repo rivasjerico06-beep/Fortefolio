@@ -197,7 +197,25 @@ format. Do not switch back to it: `Intl` gives "S" for both Sunday and Saturday
 and "T" for both Tuesday and Thursday, so a lookup table keyed on it silently
 collides and resolves two days a week to the wrong row.
 
-**Reads and writes are behind seams.** [`api.ts`](src/app/work/lumen-cafe/api.ts)
+**The shop is real, and the checkout does not trust the browser.** The basket
+lives in a module-level store
+([`cart-store.ts`](src/app/work/lumen-cafe/shop/cart-store.ts)) read through
+`useSyncExternalStore`, not React state — so it survives navigation and reloads,
+the server snapshot is explicitly empty, and nothing loads persisted state inside
+an effect.
+
+At checkout the browser sends only what was chosen: slug, options, quantity, and
+**no prices at all**. `placeOrder` in
+[`actions.ts`](src/app/work/lumen-cafe/actions.ts) reprices every line from the
+catalogue and re-checks stock. This is the one thing in the whole demo that would
+be a security bug rather than a cosmetic one if it were done the easy way — a
+checkout that bills the total it was handed can be told to charge zero. Do not
+"simplify" it by sending the cart total.
+
+There is deliberately no payment provider. The card fields are rendered
+`disabled` with a note saying so, rather than faked.
+
+**Other reads and writes are behind seams too.** [`api.ts`](src/app/work/lumen-cafe/api.ts)
 is async even though it resolves local data, so moving the menu and journal to a
 CMS touches that file and nothing else. The enquiry form posts to a Server Action
 in [`actions.ts`](src/app/work/lumen-cafe/actions.ts) rather than a plain

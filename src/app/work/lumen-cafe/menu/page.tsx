@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 import { getMenu } from "../api";
 import { PageTitle } from "../chrome";
@@ -156,6 +157,17 @@ export default async function MenuPage() {
                 </Link>
                 .
               </p>
+              <Link
+                href={`${BASE}/shop`}
+                className="lc-eyebrow group mt-8 inline-flex items-center gap-3 px-8 py-4 text-white"
+                style={{ backgroundColor: "var(--lc-accent)", color: "#fff" }}
+              >
+                Buy beans
+                <ArrowRight
+                  aria-hidden
+                  className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+                />
+              </Link>
             </div>
             <Reveal kind="right" className="lg:col-span-5">
               <div
