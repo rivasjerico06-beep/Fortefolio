@@ -184,7 +184,10 @@ export function CheckoutForm() {
       </ol>
 
       <div className="mt-12 grid gap-12 lg:grid-cols-12 lg:gap-16">
-        <div className="lg:col-span-7">
+        {/* Keyed on the step, so moving between contact, delivery and payment
+            is a panel arriving rather than three fields blinking out and three
+            different ones blinking in */}
+        <div key={step} className="lc-enter lg:col-span-7">
           {step === 0 && (
             <fieldset className="space-y-8">
               <legend className="sr-only">Contact</legend>
@@ -323,8 +326,9 @@ export function CheckoutForm() {
 
           {error && (
             <p
+              key={error}
               role="alert"
-              className="mt-8 text-[15px]"
+              className="lc-swap mt-8 text-[15px]"
               style={{ color: "var(--lc-accent-text)" }}
             >
               {error}

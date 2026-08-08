@@ -200,6 +200,37 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   await page.waitForTimeout(500);
   ok("basket survives a reload", (await basket()).includes("2 items"), await basket());
 
+  // The page-arrival animation starts every route at opacity 0, so it has to be
+  // provably able to finish. Two ways it could strand a whole page: never
+  // starting (a CSS animation waits for the first rendered frame), or ending on
+  // a lingering transform, which would make the wrapper a containing block and
+  // unstick every sticky panel under it.
+  {
+    // A product page, because it has both the wrapper and a sticky buy panel
+    await page.goto(`${LUMEN}/shop/lumen-mug`, { waitUntil: "networkidle" });
+    const rest = await page.evaluate(async () => {
+      const el = document.querySelector("main > .lc-enter");
+      if (!el) return { missing: true };
+      await Promise.all(el.getAnimations().map((a) => a.finished));
+      const cs = getComputedStyle(el);
+      return { opacity: cs.opacity, transform: cs.transform };
+    });
+    ok(
+      "the page arrival animation finishes clean",
+      rest.opacity === "1" && rest.transform === "none",
+      JSON.stringify(rest),
+    );
+
+    await page.evaluate(() => window.scrollTo(0, 200));
+    await page.waitForTimeout(400);
+    const stickyTop = await page.evaluate(() => {
+      const el = document.querySelector(".lc-sticky");
+      return el ? Math.round(el.getBoundingClientRect().top) : null;
+    });
+    ok("sticky panels still stick under the wrapper", stickyTop === 112, `top=${stickyTop}px`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+  }
+
   await page.goto(`${LUMEN}/checkout`, { waitUntil: "networkidle" });
   const summaryTotal = (await page.locator("aside dd.tabular-nums").last().innerText()).trim();
 

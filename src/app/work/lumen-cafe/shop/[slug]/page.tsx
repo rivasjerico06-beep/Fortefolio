@@ -50,8 +50,10 @@ export default async function ProductPage({ params }: Params) {
         <div className="mt-10 grid gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
             <Reveal kind="scale">
+              {/* The hero has no hover of its own, so it gets the slow zoom and
+                  a sheen that crosses it every fourteen seconds */}
               <div
-                className="relative aspect-square overflow-hidden border"
+                className="lc-zoom lc-sheen relative aspect-square overflow-hidden border"
                 style={{ borderColor: "var(--lc-line)" }}
               >
                 {product.image && (

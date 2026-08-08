@@ -273,14 +273,20 @@ const ok = (label, cond, detail = "") =>
 
     ok("reduced motion: no menu row left hidden", (await hiddenRows(page)) === 0);
 
-    // Every looping animation must have come to rest, not merely slowed down
-    const running = await page.evaluate(
-      () =>
-        [...document.querySelectorAll(".marquee, .ken-burns img, .stamp-turn, .soft-pulse")]
-          .flatMap((el) => el.getAnimations?.() ?? [])
-          .filter((a) => a.playState === "running").length,
+    // Every looping animation must have come to rest, not merely slowed down.
+    // Asks the document rather than a list of selectors: the demo grew a lot of
+    // loops, and a hand-maintained list would quietly stop covering them.
+    const running = await page.evaluate(() =>
+      document
+        .getAnimations()
+        .filter((a) => a.playState === "running")
+        .map((a) => a.animationName ?? "unnamed"),
     );
-    ok("reduced motion: looping decoration is stopped", running === 0, `${running} running`);
+    ok(
+      "reduced motion: every animation on the page is stopped",
+      running.length === 0,
+      `${running.length} running${running.length ? ": " + [...new Set(running)].join(", ") : ""}`,
+    );
     await ctx.close();
   }
 

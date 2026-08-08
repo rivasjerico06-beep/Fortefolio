@@ -2,6 +2,7 @@ import { Instrument_Serif, Inter_Tight } from "next/font/google";
 import { DemoBar } from "@/components/demo-bar";
 import { LumenFooter, NoticeBar } from "./chrome";
 import { LumenHeader } from "./nav";
+import { PageTransition } from "./page-transition";
 import { CartDrawer } from "./shop/cart";
 
 /**
@@ -38,7 +39,9 @@ export default function LumenLayout({ children }: { children: React.ReactNode })
       <NoticeBar />
       <LumenHeader />
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <PageTransition>{children}</PageTransition>
+      </main>
 
       <LumenFooter />
 

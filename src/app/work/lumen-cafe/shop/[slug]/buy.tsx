@@ -32,7 +32,11 @@ export function BuyPanel({ product }: { product: Product }) {
 
   return (
     <div>
-      <p className="text-[clamp(1.5rem,3vw,2rem)] tabular-nums">{formatPeso(unitPrice)}</p>
+      {/* Keyed on the price so picking a bigger bag swaps the figure in rather
+          than replacing it between frames */}
+      <p key={unitPrice} className="lc-swap text-[clamp(1.5rem,3vw,2rem)] tabular-nums">
+        {formatPeso(unitPrice)}
+      </p>
 
       {product.variants?.map((group) => (
         <fieldset key={group.id} className="mt-8">

@@ -698,6 +698,164 @@ body {
   animation: lc-cue 2.4s ease-in-out infinite;
 }
 
+/* --------------------------------------------------------------------------
+   The loop library
+
+   Everything below runs forever and carries no content. Each is transform or
+   opacity only, so the compositor handles it and none of them cost layout, and
+   the reduced-motion rule at the foot of this file stops the lot at once.
+
+   Durations are deliberately mismatched — 4.5s, 6s, 7s, 9s, 14s — so the loops
+   never line up into a single visible pulse. Anything that beats in time reads
+   as a progress indicator; anything that drifts reads as a room with air in it.
+   -------------------------------------------------------------------------- */
+
+/* A slow rise and fall. Section numbers, badges, small marks. */
+@keyframes lc-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+.lc-float {
+  animation: lc-float 6s ease-in-out infinite;
+}
+/* A second phase, for anything sitting near something already floating */
+.lc-float-slow {
+  animation: lc-float 9s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+/* Barely-there swell. Wordmarks and standing type. */
+@keyframes lc-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.018);
+  }
+}
+.lc-breathe {
+  animation: lc-breathe 7s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+/* A light travelling along a hairline rule */
+@keyframes lc-sweep {
+  0% {
+    transform: translate3d(-110%, 0, 0);
+  }
+  100% {
+    transform: translate3d(110%, 0, 0);
+  }
+}
+.lc-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.lc-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--lc-accent), transparent);
+  animation: lc-sweep 5.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* An arrow that keeps suggesting where it goes.
+   Always on a wrapper, never the icon itself — the icons carry a hover
+   translate, and an infinite animation on `transform` would outrank it. */
+@keyframes lc-nudge {
+  0%,
+  62%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  76% {
+    transform: translate3d(5px, 0, 0);
+  }
+}
+.lc-nudge {
+  display: inline-flex;
+  animation: lc-nudge 3.6s ease-in-out infinite;
+}
+.lc-nudge-up {
+  display: inline-flex;
+  animation: lc-nudge 4.2s ease-in-out infinite;
+  animation-delay: -1.4s;
+}
+
+/* A sheen crossing a photograph, once every fourteen seconds */
+@keyframes lc-sheen {
+  0% {
+    transform: translate3d(-130%, 0, 0) rotate(14deg);
+  }
+  55%,
+  100% {
+    transform: translate3d(130%, 0, 0) rotate(14deg);
+  }
+}
+.lc-sheen::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.14),
+    transparent
+  );
+  animation: lc-sheen 14s cubic-bezier(0.5, 0, 0.2, 1) infinite;
+}
+
+/* A slow, permanent zoom for photography that has no hover of its own.
+   Gentler than `ken-burns` and with no pan, so it can sit on an image that
+   fills a whole panel without ever showing an edge. */
+@keyframes lc-zoom {
+  0%,
+  100% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.09);
+  }
+}
+.lc-zoom img {
+  animation: lc-zoom 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* A tiny orbiting mark, for a corner that would otherwise be empty */
+@keyframes lc-orbit {
+  from {
+    transform: rotate(0deg) translate3d(9px, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translate3d(9px, 0, 0) rotate(-360deg);
+  }
+}
+.lc-orbit {
+  animation: lc-orbit 11s linear infinite;
+}
+
+/* A dotted rule that keeps travelling, like tape running past */
+@keyframes lc-crawl {
+  to {
+    background-position: 22px 0;
+  }
+}
+.lc-crawl {
+  height: 1px;
+  background-image: linear-gradient(90deg, var(--lc-line-strong) 45%, transparent 45%);
+  background-size: 11px 1px;
+  animation: lc-crawl 2.4s linear infinite;
+}
+
 /* A slow tonal drift behind the statement section. */
 @keyframes lc-wash {
   0%,
@@ -865,17 +1023,6 @@ body {
     transform: translate3d(0, 0, 0);
   }
 }
-@keyframes lc-rise {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 12px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 /* The basket count, every time it changes */
 @keyframes lc-count {
   0% {
@@ -894,6 +1041,69 @@ body {
   animation: lc-count 420ms var(--lc-ease) both;
 }
 
+/* --------------------------------------------------------------------------
+   Arrivals
+
+   Nothing in the demo should appear instantly. Three cases:
+
+   · a new route — the page rises in as the old one leaves;
+   · a re-filtered list — the results stagger in rather than snapping;
+   · a swapped panel — checkout steps, cart lines, an emptied basket.
+
+   These are plain CSS animations rather than scroll reveals, because they fire
+   on a React key change, not on entering the viewport. That also means they
+   work with no JavaScript beyond the navigation itself, and the reduced-motion
+   rule below collapses them to nothing.
+   -------------------------------------------------------------------------- */
+
+/**
+ * Ends at `transform: none`, not `translate3d(0,0,0)`.
+ *
+ * `animation-fill-mode: both` keeps the final keyframe applied forever, and any
+ * transform other than `none` makes the element a containing block for `fixed`
+ * descendants and a stacking context besides. The page wrapper below has
+ * `position: sticky` panels inside it, so it has to come to rest genuinely
+ * untransformed rather than at an identity matrix.
+ */
+@keyframes lc-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/**
+ * All three are gated on `.js`, like every other hidden starting state in this
+ * file, and for the same reason — with one extra edge.
+ *
+ * `.lc-enter` sits on the wrapper around a whole page, and its first frame is
+ * `opacity: 0`. A CSS animation does not begin until the document produces its
+ * first rendered frame, so ungated it hides the entire page for however long
+ * that takes: normally imperceptible, but on a slow first paint it is a blank
+ * screen with no failsafe. Behind `.js` the page is visible in the server HTML,
+ * the animation only ever applies once the motion layer is live, and the 2.5s
+ * failsafe that strips `.js` un-hides it if hydration never happens.
+ */
+.js .lc-enter {
+  animation: lc-in 620ms var(--lc-ease) backwards;
+}
+/* Children of a list that has just changed, each a beat behind the last.
+   Capped at ten so the tail of a long list is not still arriving half a
+   second after the head. */
+.js .lc-stagger > * {
+  animation: lc-in 560ms var(--lc-ease) backwards;
+  animation-delay: calc(min(var(--i, 0), 10) * 45ms);
+}
+
+/* A value that changes — a price, a total — cross-fades rather than cutting */
+.js .lc-swap {
+  animation: lc-in 380ms var(--lc-ease) backwards;
+}
+
 .lc-scrim {
   animation: lc-fade var(--lc-base) var(--lc-ease) both;
 }
@@ -905,7 +1115,7 @@ body {
 }
 /* Staggered so the menu reads as a list arriving, not a block appearing */
 .lc-overlay [data-stagger] {
-  animation: lc-rise 420ms var(--lc-ease) both;
+  animation: lc-in 420ms var(--lc-ease) backwards;
   animation-delay: calc(90ms + var(--i, 0) * 55ms);
 }
 
@@ -964,7 +1174,20 @@ body {
   .lc-panel,
   .lc-overlay,
   .lc-overlay [data-stagger],
-  .lc-count {
+  .lc-count,
+  .lc-float,
+  .lc-float-slow,
+  .lc-breathe,
+  .lc-sweep::after,
+  .lc-nudge,
+  .lc-nudge-up,
+  .lc-sheen::after,
+  .lc-zoom img,
+  .lc-orbit,
+  .lc-crawl,
+  .js .lc-enter,
+  .js .lc-stagger > *,
+  .js .lc-swap {
     animation: none !important;
   }
   .lc-rule[data-reveal],

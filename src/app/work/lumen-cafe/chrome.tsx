@@ -41,11 +41,13 @@ export function LumenFooter() {
       <div className="mx-auto max-w-[90rem] px-5 py-16 sm:px-10 sm:py-24">
         <div className="grid gap-12 md:grid-cols-12">
           <div className="md:col-span-5">
-            <p className="lc-display text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.9]">
+            <p className="lc-breathe lc-display text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.9]">
               Lumen
               <br />
               Café
             </p>
+            {/* A hairline that keeps travelling under the wordmark */}
+            <span aria-hidden className="lc-crawl mt-6 block w-32" />
             <address
               className="mt-8 text-[15px] leading-relaxed not-italic"
               style={{ color: "var(--lc-fg-2)" }}
@@ -142,12 +144,17 @@ export function SectionHead({
   return (
     <div className="mb-10">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <p className="lc-eyebrow">
-          {index} — {label}
+        <p className="lc-eyebrow inline-flex items-baseline gap-2">
+          {/* The number drifts; the label it belongs to stays put, so the pair
+              reads as one thing breathing rather than two things wobbling */}
+          <span className="lc-float inline-block" style={{ color: "var(--lc-accent-text)" }}>
+            {index}
+          </span>
+          — {label}
         </p>
         {action}
       </div>
-      <Reveal as="div" kind="up" className="lc-rule mt-4" />
+      <Reveal as="div" kind="up" className="lc-rule lc-sweep mt-4" />
       {title && <h2 className="mt-8 text-[clamp(2rem,5vw,3.75rem)] leading-[0.95]">{title}</h2>}
     </div>
   );
@@ -167,8 +174,11 @@ export function PageTitle({
 }) {
   return (
     <header className="mx-auto max-w-[90rem] px-5 pt-16 sm:px-10 sm:pt-24">
-      <p className="lc-eyebrow">
-        {index} — {label}
+      <p className="lc-eyebrow inline-flex items-baseline gap-2">
+        <span className="lc-float inline-block" style={{ color: "var(--lc-accent-text)" }}>
+          {index}
+        </span>
+        — {label}
       </p>
       <h1 className="mt-6 text-[clamp(3rem,11vw,9rem)] leading-[0.85]">{title}</h1>
       {intro && (
@@ -179,7 +189,7 @@ export function PageTitle({
           {intro}
         </p>
       )}
-      <Reveal as="div" kind="up" className="lc-rule mt-12" />
+      <Reveal as="div" kind="up" className="lc-rule lc-sweep mt-12" />
     </header>
   );
 }

@@ -67,7 +67,7 @@ export default async function MenuPage() {
               <div className="lg:col-span-8">
                 <Reveal kind="scale">
                   <div
-                    className="ken-burns relative aspect-[16/9] overflow-hidden border"
+                    className="ken-burns lc-sheen relative aspect-[16/9] overflow-hidden border"
                     style={{ borderColor: "var(--lc-line)" }}
                   >
                     <Image

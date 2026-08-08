@@ -173,12 +173,14 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <ul className="no-bar flex-1 overflow-y-auto px-6">
-              {resolved.map((line) => (
+            <ul className="lc-stagger no-bar flex-1 overflow-y-auto px-6">
+              {resolved.map((line, index) => (
                 <li
                   key={line.key}
                   className="flex gap-4 border-b py-5"
-                  style={{ borderColor: "var(--lc-line)" }}
+                  style={
+                    { borderColor: "var(--lc-line)", "--i": index } as React.CSSProperties
+                  }
                 >
                   <Link
                     href={`${BASE}/shop/${line.slug}`}
@@ -206,7 +208,10 @@ export function CartDrawer() {
                       >
                         {line.product.name}
                       </Link>
-                      <span className="shrink-0 text-[15px] tabular-nums">
+                      <span
+                        key={line.lineTotal}
+                        className="lc-swap shrink-0 text-[15px] tabular-nums"
+                      >
                         {formatPeso(line.lineTotal)}
                       </span>
                     </div>
@@ -245,14 +250,18 @@ export function CartDrawer() {
                 </p>
               )}
 
+              {/* Each figure is keyed on its own value, so only the numbers
+                  that actually moved play the swap */}
               <dl className="space-y-2 text-[15px]">
                 <div className="flex justify-between">
                   <dt style={{ color: "var(--lc-fg-2)" }}>Subtotal</dt>
-                  <dd className="tabular-nums">{formatPeso(subtotal)}</dd>
+                  <dd key={subtotal} className="lc-swap tabular-nums">
+                    {formatPeso(subtotal)}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt style={{ color: "var(--lc-fg-2)" }}>Delivery</dt>
-                  <dd className="tabular-nums">
+                  <dd key={delivery} className="lc-swap tabular-nums">
                     {delivery === 0 ? "Free" : formatPeso(delivery)}
                   </dd>
                 </div>
@@ -261,7 +270,9 @@ export function CartDrawer() {
                   style={{ borderColor: "var(--lc-line)" }}
                 >
                   <dt>Total</dt>
-                  <dd className="tabular-nums">{formatPeso(total)}</dd>
+                  <dd key={total} className="lc-swap tabular-nums">
+                    {formatPeso(total)}
+                  </dd>
                 </div>
               </dl>
 
@@ -274,10 +285,9 @@ export function CartDrawer() {
                 <span className="lc-eyebrow" style={{ color: "inherit" }}>
                   Checkout
                 </span>
-                <ArrowRight
-                  aria-hidden
-                  className="size-4 transition-transform duration-500 group-hover:translate-x-1"
-                />
+                <span aria-hidden className="lc-nudge">
+                  <ArrowRight className="size-4 transition-transform duration-500 group-hover:translate-x-1" />
+                </span>
               </Link>
             </div>
           </>

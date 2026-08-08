@@ -30,7 +30,7 @@ export default async function LumenHome() {
     <>
       {/* 01 — Hero ------------------------------------------------------- */}
       <section className="relative flex min-h-[calc(100svh-6rem)] flex-col justify-end overflow-hidden">
-        <div className="ken-burns absolute inset-0">
+        <div className="ken-burns lc-sheen absolute inset-0">
           <Image
             src={menuHero.image}
             alt={menuHero.alt}
@@ -244,10 +244,12 @@ export default async function LumenHome() {
               style={{ color: "var(--lc-accent-text)" }}
             >
               Read the write-up
-              <ArrowRight
-                aria-hidden
-                className="size-4 transition-transform duration-500 group-hover:translate-x-1"
-              />
+              {/* The loop lives on the wrapper: an infinite animation on the
+                  icon's own `transform` would outrank the hover translate and
+                  the pointer would stop doing anything at all. */}
+              <span aria-hidden className="lc-nudge">
+                <ArrowRight className="size-4 transition-transform duration-500 group-hover:translate-x-1" />
+              </span>
             </Link>
           </Reveal>
 
@@ -343,10 +345,9 @@ export default async function LumenHome() {
               <span className="lc-eyebrow" style={{ color: "inherit" }}>
                 Plan your visit
               </span>
-              <ArrowUpRight
-                aria-hidden
-                className="size-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              />
+              <span aria-hidden className="lc-nudge-up">
+                <ArrowUpRight className="size-4 transition-transform duration-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </span>
             </Link>
           </div>
         </div>

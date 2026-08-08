@@ -114,7 +114,7 @@ export function ShopGrid() {
 
       {shown.length === 0 ? (
         <div
-          className="mt-10 border px-8 py-20 text-center"
+          className="lc-enter mt-10 border px-8 py-20 text-center"
           style={{ borderColor: "var(--lc-line)" }}
         >
           <p className="text-[clamp(1.5rem,3vw,2rem)] leading-tight">Nothing matches that</p>
@@ -126,11 +126,20 @@ export function ShopGrid() {
           </button>
         </div>
       ) : (
-        <ul className="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-          {shown.map((product) => {
+        // Keyed on the selection, so changing a filter remounts the list and
+        // the cards stagger back in instead of snapping to their new places.
+        <ul
+          key={`${category}-${inStockOnly}-${sort}`}
+          className="lc-stagger mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {shown.map((product, index) => {
             const soldOut = product.stock === 0;
             return (
-              <li key={product.slug} className="lc-row group">
+              <li
+                key={product.slug}
+                className="lc-row group"
+                style={{ "--i": index } as React.CSSProperties}
+              >
                 <Link href={`${BASE}/shop/${product.slug}`} className="block">
                   <div
                     className="lc-frame relative aspect-square overflow-hidden border"
