@@ -240,8 +240,7 @@ export default async function LumenHome() {
             </p>
             <Link
               href={`${BASE}/blog/washed-benguet-on-the-grinder`}
-              className="lc-eyebrow group mt-8 inline-flex items-center gap-2"
-              style={{ color: "var(--lc-accent-text)" }}
+              className="lc-accented lc-eyebrow group mt-8 inline-flex items-center gap-2"
             >
               Read the write-up
               {/* The loop lives on the wrapper: an infinite animation on the

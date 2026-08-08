@@ -140,8 +140,9 @@ export function LumenHeader() {
               key={item.href}
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
-              className="lc-eyebrow transition-colors hover:text-[var(--lc-fg)]"
-              style={isActive(item.href) ? { color: "var(--lc-fg)" } : undefined}
+              // Active styling keys off `aria-current` in CSS rather than an
+              // inline colour — inline wins over every rule, hover included.
+              className="lc-eyebrow"
             >
               {item.label}
             </Link>
@@ -159,7 +160,7 @@ export function LumenHeader() {
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
-            className="lc-eyebrow inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
+            className="lc-eyebrow inline-flex items-center gap-2"
           >
             <Menu className="size-4" aria-hidden />
             Menu

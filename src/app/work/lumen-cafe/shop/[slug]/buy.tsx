@@ -51,7 +51,7 @@ export function BuyPanel({ product }: { product: Product }) {
                   onClick={() => setChosen((prev) => ({ ...prev, [group.id]: option.id }))}
                   aria-pressed={active}
                   disabled={soldOut}
-                  className={`border px-4 py-2.5 text-[14px] disabled:opacity-40 ${
+                  className={`lc-swatch border px-4 py-2.5 text-[14px] disabled:opacity-40 ${
                     active ? "" : "lc-btn-ghost"
                   }`}
                   style={

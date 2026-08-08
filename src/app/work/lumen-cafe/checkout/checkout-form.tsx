@@ -343,7 +343,7 @@ export function CheckoutForm() {
                   setError(null);
                   setStep((step - 1) as Step);
                 }}
-                className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
+                className="lc-eyebrow group inline-flex items-center gap-2"
               >
                 <ArrowLeft
                   className="size-4 transition-transform duration-500 group-hover:-translate-x-1"

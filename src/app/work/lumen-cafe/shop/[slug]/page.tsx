@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: Params) {
       <div className="mx-auto max-w-[90rem] px-5 pt-16 sm:px-10 sm:pt-24">
         <Link
           href={`${BASE}/shop`}
-          className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
+          className="lc-eyebrow group inline-flex items-center gap-2"
         >
           <ArrowLeft
             className="size-4 transition-transform duration-500 group-hover:-translate-x-1"

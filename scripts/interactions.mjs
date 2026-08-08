@@ -293,6 +293,82 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok("basket is emptied after ordering", (await basket()).includes("empty"), await basket());
 }
 
+// --- Lumen: every hover actually does something ------------------------------
+/**
+ * A hover written in the markup is not proof of a hover that happens.
+ *
+ * Two ways one dies silently here. Everything in globals.css is unlayered and
+ * Tailwind's utilities live in `@layer utilities` — unlayered beats layered
+ * whatever the specificity, so `.lc-eyebrow { color: … }` quietly outranked
+ * every `hover:text-[…]` written on an eyebrow element. And an inline `style`
+ * colour beats all of it, so any element coloured inline could never change on
+ * hover at all. Between them that was around eight dead links per page, each
+ * one looking perfectly correct in the JSX.
+ *
+ * So this points at each element and asks the browser whether anything moved.
+ */
+{
+  const snapshot = (el) => {
+    const read = (node, pseudo) => {
+      const s = getComputedStyle(node, pseudo);
+      return [
+        s.color,
+        s.backgroundColor,
+        s.borderTopColor,
+        s.opacity,
+        s.transform,
+        s.translate,
+        s.scale,
+        s.filter,
+        s.backgroundSize,
+        s.textDecorationLine,
+      ].join("~");
+    };
+    return [
+      read(el, null),
+      read(el, "::before"),
+      read(el, "::after"),
+      ...[...el.querySelectorAll("*")].map((k) => read(k, null) + read(k, "::after")),
+    ].join("|");
+  };
+
+  const dead = [];
+  let checked = 0;
+
+  for (const route of ["", "/menu", "/shop", "/shop/washed-benguet", "/blog", "/visit", "/about"]) {
+    await page.goto(`${BASE}/work/lumen-cafe${route}`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(800);
+
+    for (const handle of await page.$$("a, button, summary")) {
+      if (!(await handle.isVisible())) continue;
+      if (await handle.evaluate((el) => el.disabled === true)) continue;
+
+      await page.mouse.move(2, 2);
+      await page.waitForTimeout(60);
+      const before = await handle.evaluate(snapshot);
+      try {
+        await handle.hover({ timeout: 1000 });
+      } catch {
+        continue; // off-screen or covered; not what this is testing
+      }
+      checked += 1;
+      await page.waitForTimeout(400);
+      if ((await handle.evaluate(snapshot)) === before) {
+        const label = await handle.evaluate((el) =>
+          (el.getAttribute("aria-label") || el.textContent || "icon").trim().slice(0, 30),
+        );
+        dead.push(`${route || "/"} — ${label.replace(/\s+/g, " ")}`);
+      }
+    }
+  }
+
+  ok(
+    "every hover in the demo actually responds",
+    dead.length === 0,
+    dead.length ? `${dead.length}/${checked} dead: ${dead.slice(0, 5).join("; ")}` : `${checked} checked`,
+  );
+}
+
 // --- Portfolio: theme toggle persists ---------------------------------------
 await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 const before = await page.evaluate(() => document.documentElement.dataset.theme);

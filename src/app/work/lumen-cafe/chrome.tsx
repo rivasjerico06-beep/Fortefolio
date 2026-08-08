@@ -101,10 +101,12 @@ export function LumenFooter() {
             <ul className="mt-5 space-y-3">
               {posts.slice(0, 2).map((post) => (
                 <li key={post.slug}>
+                  {/* The colour is a class rather than an inline style on
+                      purpose: inline wins over everything, so a hover declared
+                      anywhere else could never take effect. */}
                   <Link
                     href={`${BASE}/blog/${post.slug}`}
-                    className="text-[15px] leading-snug transition-colors hover:text-[var(--lc-accent-text)]"
-                    style={{ color: "var(--lc-fg-2)" }}
+                    className="lc-quiet text-[15px] leading-snug"
                   >
                     {post.title}
                   </Link>

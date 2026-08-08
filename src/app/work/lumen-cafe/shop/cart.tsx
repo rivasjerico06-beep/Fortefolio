@@ -33,7 +33,7 @@ export function CartButton({ className }: { className?: string }) {
     <button
       type="button"
       onClick={openCart}
-      className={`lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)] ${className ?? ""}`}
+      className={`lc-eyebrow group inline-flex items-center gap-2 ${className ?? ""}`}
       aria-label={
         count > 0 ? `Basket, ${count} item${count === 1 ? "" : "s"}` : "Basket, empty"
       }
@@ -139,7 +139,7 @@ export function CartDrawer() {
             type="button"
             onClick={requestClose}
             data-autofocus
-            className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
+            className="lc-eyebrow group inline-flex items-center gap-2"
           >
             Close
             <X

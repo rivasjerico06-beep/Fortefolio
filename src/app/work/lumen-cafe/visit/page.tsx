@@ -46,16 +46,14 @@ export default function VisitPage() {
             <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
               <a
                 href={`tel:${address.phone.replace(/\s/g, "")}`}
-                className="lc-eyebrow inline-flex items-center gap-2"
-                style={{ color: "var(--lc-accent-text)" }}
+                className="lc-accented lc-eyebrow inline-flex items-center gap-2"
               >
                 <Phone className="size-4" aria-hidden />
                 {address.phone}
               </a>
               <a
                 href="https://maps.google.com"
-                className="lc-eyebrow inline-flex items-center gap-2"
-                style={{ color: "var(--lc-accent-text)" }}
+                className="lc-accented lc-eyebrow inline-flex items-center gap-2"
               >
                 <MapPin className="size-4" aria-hidden />
                 Open in Maps

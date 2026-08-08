@@ -506,6 +506,7 @@ body {
   --lc-accent: #c8551b; /* fills and display type only */
   --lc-accent-text: #b64d19; /* 4.51:1 — body-size accent text */
   --lc-accent-solid: #b64d19; /* carries white labels — 5.17:1 */
+  --lc-accent-deep: #7d340e; /* the hover wash under a solid button */
   --lc-line: #e4dcd0;
   --lc-line-strong: #cfc3b2;
 
@@ -532,6 +533,7 @@ body {
      the page, so its contrast does not move when the ground does. The lighter
      `--lc-accent-text` above would take white down to 4.14:1. */
   --lc-accent-solid: #b64d19;
+  --lc-accent-deep: #7d340e;
   --lc-line: #2c241e;
   --lc-line-strong: #3d332b;
 }
@@ -579,11 +581,52 @@ body {
   transition:
     color var(--lc-base) var(--lc-ease),
     background-color var(--lc-base) var(--lc-ease),
+    background-size var(--lc-base) var(--lc-ease),
     border-color var(--lc-base) var(--lc-ease),
     box-shadow var(--lc-base) var(--lc-ease),
     opacity var(--lc-base) var(--lc-ease),
     filter var(--lc-base) var(--lc-ease),
     transform var(--lc-base) var(--lc-ease);
+}
+
+/**
+ * Hover states live here, in CSS, and not as `hover:` utilities in the markup.
+ *
+ * Everything in this file is unlayered, and Tailwind's utilities sit in
+ * `@layer utilities`. Unlayered styles beat layered ones outright, whatever the
+ * specificity — so `.lc-eyebrow { color: … }` here silently won over every
+ * `hover:text-[…]` written on an eyebrow element, and about eight links per
+ * page had a hover that did nothing at all. Declaring both halves in the same
+ * place makes the cascade obvious instead of surprising.
+ */
+:where(a, button, summary).lc-eyebrow:hover {
+  color: var(--lc-fg);
+}
+
+/* The current page in a nav still answers the pointer — it just answers
+   differently, since it cannot get any more "here" than it already is. */
+.lumen [aria-current="page"].lc-eyebrow {
+  color: var(--lc-fg);
+}
+:where(a).lc-eyebrow[aria-current="page"]:hover {
+  color: var(--lc-accent-text);
+}
+
+/* Muted body links — the footer's recent posts, and anything set in --lc-fg-2
+   that should warm up when pointed at */
+.lc-quiet {
+  color: var(--lc-fg-2);
+}
+:where(a, button).lc-quiet:hover {
+  color: var(--lc-accent-text);
+}
+
+/* Links already carrying the accent, which cannot warm up any further */
+.lc-accented {
+  color: var(--lc-accent-text);
+}
+:where(a, button).lc-accented:hover {
+  color: var(--lc-fg);
 }
 
 /* Photography settles rather than cuts — this also covers the grayscale a
@@ -905,32 +948,31 @@ body {
    a background-colour change, so the fill has somewhere to move from — a
    colour swap has no direction and always reads as a flicker.
    -------------------------------------------------------------------------- */
+/**
+ * Built on `background-image` rather than a pseudo-element.
+ *
+ * The pseudo version painted the wash at `z-index: -1` inside an `isolate`
+ * stacking context, which puts it *behind the button's own background* — the
+ * animation ran perfectly and was completely invisible. Raising it instead
+ * would have meant lifting every child above it, and several of these buttons
+ * hold bare text nodes, which cannot be raised.
+ *
+ * A background image sits above the background colour and below the content on
+ * its own, needs no stacking context, and `background-size` animates. The base
+ * colour stays an inline style on each button, which this never touches.
+ */
 .lc-btn {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
+  background-image: linear-gradient(var(--lc-accent-deep), var(--lc-accent-deep));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 0%;
 }
-.lc-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: var(--lc-fg);
-  opacity: 0.9;
-  transform: scaleY(0);
-  transform-origin: bottom;
-  transition: transform var(--lc-base) var(--lc-ease);
+.lc-btn:hover:not(:disabled),
+.lc-btn:focus-visible:not(:disabled) {
+  background-size: 100% 100%;
 }
-.lc-btn:hover::before,
-.lc-btn:focus-visible::before {
-  transform: scaleY(1);
-}
-.lc-btn:active {
+.lc-btn:active:not(:disabled) {
   transform: translate3d(0, 1px, 0);
-}
-.lc-btn:disabled::before,
-.lc-btn[aria-disabled="true"]::before {
-  transform: scaleY(0);
 }
 
 /* Ghost buttons — a border and a label, filling in on hover */
@@ -950,6 +992,16 @@ body {
 }
 .lc-btn-ghost:active:not(:disabled) {
   transform: translate3d(0, 1px, 0);
+}
+
+/* Variant swatches. The chosen one carries an inline accent background that no
+   rule here can override, so its hover is a brightness shift instead — that
+   sits on top of whatever colour the element happens to have. */
+.lc-swatch:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.lc-swatch:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* --------------------------------------------------------------------------
@@ -982,6 +1034,10 @@ body {
   color: var(--lc-accent-text);
 }
 .lc-chip:hover:not([aria-pressed="true"]) {
+  color: var(--lc-fg);
+}
+/* The chosen chip still answers the pointer, the other way round */
+.lc-chip[aria-pressed="true"]:hover {
   color: var(--lc-fg);
 }
 
