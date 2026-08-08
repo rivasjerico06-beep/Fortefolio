@@ -140,7 +140,7 @@ export default async function LumenHome() {
               className="lc-row group flex w-[68vw] shrink-0 flex-col sm:w-[26vw] lg:w-[21vw]"
             >
               <div
-                className="relative aspect-[4/5] overflow-hidden border"
+                className="lc-frame relative aspect-[4/5] overflow-hidden border"
                 style={{ borderColor: "var(--lc-line)" }}
               >
                 {item.image ? (
@@ -286,7 +286,7 @@ export default async function LumenHome() {
             <Reveal key={post.slug} kind="up" stagger={index} as="article">
               <Link href={`${BASE}/blog/${post.slug}`} className="lc-row group block">
                 <div
-                  className="relative aspect-[16/10] overflow-hidden border"
+                  className="lc-frame relative aspect-[16/10] overflow-hidden border"
                   style={{ borderColor: "var(--lc-line)" }}
                 >
                   <Image
@@ -337,8 +337,8 @@ export default async function LumenHome() {
             </dl>
             <Link
               href={`${BASE}/visit`}
-              className="group mt-10 inline-flex items-center gap-3 px-8 py-4 text-white"
-              style={{ backgroundColor: "var(--lc-accent)" }}
+              className="lc-btn group mt-10 inline-flex items-center gap-3 px-8 py-4 text-white"
+              style={{ backgroundColor: "var(--lc-accent-solid)" }}
             >
               <span className="lc-eyebrow" style={{ color: "inherit" }}>
                 Plan your visit

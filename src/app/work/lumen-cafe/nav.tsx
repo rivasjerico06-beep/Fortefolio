@@ -73,19 +73,38 @@ export function OpenIndicator({ className }: { className?: string }) {
    Header
 --------------------------------------------------------------------------- */
 
+/** Matches the `[data-closing]` exit animation in globals.css. */
+const EXIT_MS = 200;
+
 export function LumenHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // The overlay covers the page, so it is a modal in practice even without the
   // attribute — focus has to stay in it, and Escape has to close it.
   useFocusTrap(overlayRef, menuOpen);
 
+  // Deferred so the overlay can play its exit before it leaves the tree
+  const closeMenu = () => {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(() => {
+      setMenuOpen(false);
+      setClosing(false);
+    }, EXIT_MS);
+  };
+
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key !== "Escape") return;
+      setClosing(true);
+      window.setTimeout(() => {
+        setMenuOpen(false);
+        setClosing(false);
+      }, EXIT_MS);
     };
     document.addEventListener("keydown", onKey);
     const previous = document.body.style.overflow;
@@ -140,7 +159,7 @@ export function LumenHeader() {
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
-            className="lc-eyebrow inline-flex items-center gap-2"
+            className="lc-eyebrow inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
           >
             <Menu className="size-4" aria-hidden />
             Menu
@@ -155,19 +174,23 @@ export function LumenHeader() {
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
-          className="fixed inset-0 z-50 flex flex-col md:hidden"
+          data-closing={closing}
+          className="lc-overlay fixed inset-0 z-50 flex flex-col md:hidden"
           style={{ backgroundColor: "var(--lc-bg)" }}
         >
           <div className="flex items-center justify-between px-5 py-4">
             <span className="lc-display text-2xl">Lumen</span>
             <button
               type="button"
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenu}
               data-autofocus
-              className="lc-eyebrow inline-flex items-center gap-2"
+              className="lc-eyebrow group inline-flex items-center gap-2"
             >
               Close
-              <X className="size-4" aria-hidden />
+              <X
+                className="size-4 transition-transform duration-300 group-hover:rotate-90"
+                aria-hidden
+              />
             </button>
           </div>
 
@@ -175,13 +198,14 @@ export function LumenHeader() {
             aria-label="Lumen Café"
             className="flex flex-1 flex-col justify-center gap-2 px-5"
           >
-            {nav.map((item) => (
+            {nav.map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className="lc-display border-b py-4 text-4xl transition-colors hover:text-[var(--lc-accent-text)]"
-                style={{ borderColor: "var(--lc-line)" }}
+                data-stagger
+                style={{ borderColor: "var(--lc-line)", "--i": index } as React.CSSProperties}
+                className="lc-display border-b py-4 text-4xl hover:text-[var(--lc-accent-text)]"
               >
                 {item.label}
               </Link>

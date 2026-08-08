@@ -80,11 +80,14 @@ export function CheckoutForm() {
 
         <Link
           href={`${BASE}/shop`}
-          className="lc-eyebrow mt-12 inline-flex items-center gap-2 px-8 py-4 text-white"
-          style={{ backgroundColor: "var(--lc-accent)" }}
+          className="lc-btn lc-eyebrow group mt-12 inline-flex items-center gap-2 px-8 py-4 text-white"
+          style={{ backgroundColor: "var(--lc-accent-solid)" }}
         >
           Back to the shop
-          <ArrowRight className="size-4" aria-hidden />
+          <ArrowRight
+            className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+            aria-hidden
+          />
         </Link>
       </div>
     );
@@ -100,11 +103,14 @@ export function CheckoutForm() {
         </p>
         <Link
           href={`${BASE}/shop`}
-          className="lc-eyebrow mt-10 inline-flex items-center gap-2 px-8 py-4 text-white"
-          style={{ backgroundColor: "var(--lc-accent)" }}
+          className="lc-btn lc-eyebrow group mt-10 inline-flex items-center gap-2 px-8 py-4 text-white"
+          style={{ backgroundColor: "var(--lc-accent-solid)" }}
         >
           Browse the shop
-          <ArrowRight className="size-4" aria-hidden />
+          <ArrowRight
+            className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+            aria-hidden
+          />
         </Link>
       </div>
     );
@@ -166,7 +172,7 @@ export function CheckoutForm() {
               className="grid size-6 place-items-center rounded-full text-[11px]"
               style={
                 index <= step
-                  ? { backgroundColor: "var(--lc-accent)", color: "#fff" }
+                  ? { backgroundColor: "var(--lc-accent-solid)", color: "#fff" }
                   : { border: "1px solid var(--lc-line-strong)", color: "var(--lc-fg-2)" }
               }
             >
@@ -333,9 +339,12 @@ export function CheckoutForm() {
                   setError(null);
                   setStep((step - 1) as Step);
                 }}
-                className="lc-eyebrow inline-flex items-center gap-2"
+                className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
               >
-                <ArrowLeft className="size-4" aria-hidden />
+                <ArrowLeft
+                  className="size-4 transition-transform duration-500 group-hover:-translate-x-1"
+                  aria-hidden
+                />
                 Back
               </button>
             )}
@@ -344,8 +353,8 @@ export function CheckoutForm() {
               type="button"
               onClick={step === 2 ? submit : next}
               disabled={placing}
-              className="group ml-auto inline-flex items-center gap-3 px-8 py-4 text-white disabled:opacity-60"
-              style={{ backgroundColor: "var(--lc-accent)" }}
+              className="lc-btn group ml-auto inline-flex items-center gap-3 px-8 py-4 text-white disabled:opacity-60"
+              style={{ backgroundColor: "var(--lc-accent-solid)" }}
             >
               <span className="lc-eyebrow" style={{ color: "inherit" }}>
                 {step === 2 ? (placing ? "Placing order" : "Place order") : "Continue"}

@@ -108,6 +108,63 @@ body {
 }
 
 /* ==========================================================================
+   Scrollbars
+
+   The stock Windows scrollbar is a light grey slab that sits on top of a dark
+   editorial page and reads as browser chrome rather than part of the design.
+   These rules tint it into the palette instead.
+
+   The document's bar is thinned rather than removed: on a page over 10,000px
+   long it is the only cue that there is more below, and on a machine with no
+   trackpad it is how people scroll. In-page scrollers below get theirs hidden
+   outright, because there the content itself is the affordance.
+
+   `scrollbar-width` is not inherited, hence the universal selector. Chromium
+   ignores `::-webkit-scrollbar` on any element that sets these two properties,
+   so the pseudo-elements only ever reach Safari before 18.2.
+   ========================================================================== */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* The viewport's bar belongs to the document, so a demo's own line colour
+   cannot reach it through the cascade — these repeat `--lc-line-strong` from
+   the Lumen block below, and must move with it. */
+:root:has(.lumen) {
+  scrollbar-color: #cfc3b2 transparent;
+}
+:root[data-theme="dark"]:has(.lumen) {
+  scrollbar-color: #3d332b transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 9999px;
+}
+
+/* Scrollers whose bar is pure noise: a sideways gallery, a drawer's item list,
+   a wide table. They stay fully scrollable by wheel, drag, touch and keyboard —
+   only the bar goes. */
+.no-bar {
+  scrollbar-width: none;
+}
+.no-bar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ==========================================================================
    Animation system
 
    Every animated element is VISIBLE in the server HTML. The hidden starting
@@ -212,6 +269,21 @@ body {
 .hscene-panel {
   overflow-x: auto;
   overscroll-behavior-x: contain;
+  /* Under `.js` this is a pinned scene with nothing to scroll. Without it —
+     no JavaScript, or reduced motion — it is a plain swipeable row, and the
+     native bar underneath it is the one thing that gave the effect away. */
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.hscene-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.hscene-track > * {
+  scroll-snap-align: center;
+}
+.js .hscene-panel {
+  scroll-snap-type: none;
 }
 .hscene-track {
   display: flex;
@@ -433,8 +505,18 @@ body {
   --lc-fg-2: #776b5f; /* 4.53:1 on --lc-bg */
   --lc-accent: #c8551b; /* fills and display type only */
   --lc-accent-text: #b64d19; /* 4.51:1 — body-size accent text */
+  --lc-accent-solid: #b64d19; /* carries white labels — 5.17:1 */
   --lc-line: #e4dcd0;
   --lc-line-strong: #cfc3b2;
+
+  /* One easing and three speeds, so every transition in the demo agrees with
+     every other one. The curve is the same decelerating ease the scroll
+     reveals use — motion that starts quickly and settles slowly. */
+  --lc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --lc-ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --lc-fast: 180ms;
+  --lc-base: 320ms;
+  --lc-slow: 620ms;
 }
 
 [data-theme="dark"] .lumen {
@@ -446,6 +528,10 @@ body {
   --lc-fg-2: #8a7c6e; /* 4.63:1 on the dark ground */
   --lc-accent: #c8551b;
   --lc-accent-text: #ca5c24; /* 4.52:1 */
+  /* Unchanged between themes: a filled button's label sits on the fill, not on
+     the page, so its contrast does not move when the ground does. The lighter
+     `--lc-accent-text` above would take white down to 4.14:1. */
+  --lc-accent-solid: #b64d19;
   --lc-line: #2c241e;
   --lc-line-strong: #3d332b;
 }
@@ -473,6 +559,47 @@ body {
 .lumen :focus-visible {
   outline: 2px solid var(--lc-accent-text);
   outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Lumen interaction
+
+   Every state change in the demo eases rather than snaps: hover, focus, press,
+   disable. Rather than remembering a transition on each of a hundred elements,
+   the whole interactive surface gets one, and individual components only
+   declare *what* changes.
+
+   `:where()` keeps this at a single class of specificity, so any component that
+   needs its own timing simply says so and wins. `transform` is included, but
+   the scroll reveals above are `.js [data-reveal]` — two classes — so they keep
+   their own longer curve.
+   ========================================================================== */
+
+.lumen :where(a, button, summary, label, input, select, textarea, [role="button"]) {
+  transition:
+    color var(--lc-base) var(--lc-ease),
+    background-color var(--lc-base) var(--lc-ease),
+    border-color var(--lc-base) var(--lc-ease),
+    box-shadow var(--lc-base) var(--lc-ease),
+    opacity var(--lc-base) var(--lc-ease),
+    filter var(--lc-base) var(--lc-ease),
+    transform var(--lc-base) var(--lc-ease);
+}
+
+/* Photography settles rather than cuts — this also covers the grayscale a
+   sold-out product picks up, and the blur-up placeholder next/image swaps in. */
+.lumen :where(img) {
+  transition:
+    filter var(--lc-slow) var(--lc-ease),
+    opacity var(--lc-slow) var(--lc-ease),
+    transform var(--lc-slow) var(--lc-ease);
+}
+
+/* Focus rings ease in with the element they belong to */
+.lumen :focus-visible {
+  transition:
+    outline-color var(--lc-fast) var(--lc-ease),
+    outline-offset var(--lc-fast) var(--lc-ease);
 }
 
 /* Editorial detail: the small-caps section label used throughout */
@@ -507,7 +634,11 @@ body {
   background-position: 0 100%;
   background-repeat: no-repeat;
   background-size: 100% 1px;
-  transition: background-size 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Restates colour because this rule replaces the shared one above — same
+     specificity, later in the file. */
+  transition:
+    background-size var(--lc-slow) var(--lc-ease),
+    color var(--lc-base) var(--lc-ease);
 }
 .lc-link:hover {
   background-size: 0% 1px;
@@ -594,7 +725,9 @@ body {
   transform: scaleX(1);
 }
 .lc-row img {
-  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 900ms var(--lc-ease),
+    filter var(--lc-slow) var(--lc-ease);
 }
 .lc-row:hover img {
   transform: scale(1.06);
@@ -604,6 +737,189 @@ body {
 .lc-sticky {
   position: sticky;
   top: 7rem;
+}
+
+/* --------------------------------------------------------------------------
+   Solid buttons
+
+   A darker wash rises from the bottom edge on hover, and the button dips a
+   hair when pressed. The wash is a pseudo-element behind the label rather than
+   a background-colour change, so the fill has somewhere to move from — a
+   colour swap has no direction and always reads as a flicker.
+   -------------------------------------------------------------------------- */
+.lc-btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.lc-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--lc-fg);
+  opacity: 0.9;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--lc-base) var(--lc-ease);
+}
+.lc-btn:hover::before,
+.lc-btn:focus-visible::before {
+  transform: scaleY(1);
+}
+.lc-btn:active {
+  transform: translate3d(0, 1px, 0);
+}
+.lc-btn:disabled::before,
+.lc-btn[aria-disabled="true"]::before {
+  transform: scaleY(0);
+}
+
+/* Ghost buttons — a border and a label, filling in on hover */
+/* The resting border lives here rather than in an inline `style`: an inline
+   value outranks every stylesheet rule, so it would pin the border open and
+   leave the hover below with nothing to change. Without this line the border
+   falls through to Tailwind's `currentColor` default — which is already the
+   hover colour, so hovering does nothing visible. */
+.lc-btn-ghost {
+  border-color: var(--lc-line-strong);
+  background-color: transparent;
+}
+.lc-btn-ghost:hover:not(:disabled),
+.lc-btn-ghost:focus-visible:not(:disabled) {
+  border-color: var(--lc-fg);
+  background-color: var(--lc-surface);
+}
+.lc-btn-ghost:active:not(:disabled) {
+  transform: translate3d(0, 1px, 0);
+}
+
+/* --------------------------------------------------------------------------
+   Chips — filter and sort controls that underline themselves
+
+   The rule grows from the left on hover and stays put once the chip is the
+   chosen one, so selecting a filter is the same motion the pointer already
+   previewed.
+   -------------------------------------------------------------------------- */
+.lc-chip {
+  position: relative;
+}
+.lc-chip::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -6px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--lc-base) var(--lc-ease);
+}
+.lc-chip:hover::after,
+.lc-chip:focus-visible::after,
+.lc-chip[aria-pressed="true"]::after {
+  transform: scaleX(1);
+}
+.lc-chip[aria-pressed="true"] {
+  color: var(--lc-accent-text);
+}
+.lc-chip:hover:not([aria-pressed="true"]) {
+  color: var(--lc-fg);
+}
+
+/* Stepper — the quantity control either side of a number */
+.lc-step:hover:not(:disabled) {
+  background-color: var(--lc-surface);
+  color: var(--lc-accent-text);
+}
+.lc-step:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+/* Cards lift their frame rather than themselves — an editorial page should not
+   look like it is made of floating tiles. */
+.lc-row:hover .lc-frame {
+  border-color: var(--lc-line-strong);
+}
+
+/* --------------------------------------------------------------------------
+   Overlays
+
+   The basket drawer and the phone menu both animate in and back out. Exit is
+   quicker than entry and uses the opposite curve: arriving should settle,
+   leaving should get out of the way.
+   -------------------------------------------------------------------------- */
+@keyframes lc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes lc-slide-in {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+@keyframes lc-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* The basket count, every time it changes */
+@keyframes lc-count {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.lc-count {
+  animation: lc-count 420ms var(--lc-ease) both;
+}
+
+.lc-scrim {
+  animation: lc-fade var(--lc-base) var(--lc-ease) both;
+}
+.lc-panel {
+  animation: lc-slide-in 420ms var(--lc-ease) both;
+}
+.lc-overlay {
+  animation: lc-fade 260ms var(--lc-ease) both;
+}
+/* Staggered so the menu reads as a list arriving, not a block appearing */
+.lc-overlay [data-stagger] {
+  animation: lc-rise 420ms var(--lc-ease) both;
+  animation-delay: calc(90ms + var(--i, 0) * 55ms);
+}
+
+[data-closing="true"] .lc-scrim {
+  animation: lc-fade 220ms var(--lc-ease-in) reverse both;
+}
+[data-closing="true"] .lc-panel {
+  animation: lc-slide-in 220ms var(--lc-ease-in) reverse both;
+}
+[data-closing="true"].lc-overlay {
+  animation: lc-fade 200ms var(--lc-ease-in) reverse both;
+}
+[data-closing="true"] [data-stagger] {
+  animation: none;
 }
 
 /* ==========================================================================
@@ -643,12 +959,21 @@ body {
   .ken-burns img,
   .lc-ping::after,
   .lc-cue span,
-  .lc-wash {
+  .lc-wash,
+  .lc-scrim,
+  .lc-panel,
+  .lc-overlay,
+  .lc-overlay [data-stagger],
+  .lc-count {
     animation: none !important;
   }
   .lc-rule[data-reveal],
   .lc-row .lc-row-rule {
     transform: none !important;
+  }
+  /* Identity transform would leave the hover wash covering the label */
+  .lc-btn::before {
+    display: none;
   }
 }
 

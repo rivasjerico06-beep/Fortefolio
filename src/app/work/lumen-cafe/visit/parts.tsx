@@ -49,7 +49,7 @@ export function HoursTable() {
               {isToday && (
                 <span
                   className="lc-eyebrow px-2 py-0.5 text-white"
-                  style={{ backgroundColor: "var(--lc-accent)", color: "#fff" }}
+                  style={{ backgroundColor: "var(--lc-accent-solid)", color: "#fff" }}
                 >
                   Today
                 </span>
@@ -196,8 +196,8 @@ export function EnquiryForm() {
       <button
         type="submit"
         disabled={status === "sending"}
-        className="group inline-flex items-center gap-3 px-8 py-4 text-white transition-opacity disabled:opacity-60"
-        style={{ backgroundColor: "var(--lc-accent)" }}
+        className="lc-btn group inline-flex items-center gap-3 px-8 py-4 text-white disabled:opacity-60"
+        style={{ backgroundColor: "var(--lc-accent-solid)" }}
       >
         <span className="lc-eyebrow" style={{ color: "inherit" }}>
           {status === "sending" ? "Sending" : "Send enquiry"}

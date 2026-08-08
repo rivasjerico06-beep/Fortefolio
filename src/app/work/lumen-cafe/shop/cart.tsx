@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Minus, Plus, ShoppingBag, X } from "lucide-react";
@@ -33,17 +33,24 @@ export function CartButton({ className }: { className?: string }) {
     <button
       type="button"
       onClick={openCart}
-      className={`lc-eyebrow inline-flex items-center gap-2 ${className ?? ""}`}
+      className={`lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)] ${className ?? ""}`}
       aria-label={
         count > 0 ? `Basket, ${count} item${count === 1 ? "" : "s"}` : "Basket, empty"
       }
     >
-      <ShoppingBag className="size-4" aria-hidden />
+      <ShoppingBag
+        className="size-4 transition-transform duration-300 group-hover:-translate-y-0.5"
+        aria-hidden
+      />
       <span aria-hidden>Basket</span>
       {count > 0 && (
+        // `key` on the count restarts the pop animation every time it changes,
+        // so adding a second item is visible even though the badge was already
+        // there — without it the element persists and nothing re-runs.
         <span
-          className="inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5 text-white"
-          style={{ backgroundColor: "var(--lc-accent)" }}
+          key={count}
+          className="lc-count inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5 text-white"
+          style={{ backgroundColor: "var(--lc-accent-solid)" }}
         >
           {count}
         </span>
@@ -54,9 +61,17 @@ export function CartButton({ className }: { className?: string }) {
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * How long the exit animation runs before the drawer leaves the tree. Matches
+ * the `[data-closing]` rules in globals.css — a drawer that unmounts on click
+ * cannot animate out, so the close is deferred by exactly this long.
+ */
+const EXIT_MS = 240;
+
 export function CartDrawer() {
   const { lines, open, resolved, count, subtotal, delivery, total } = useCart();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [closing, setClosing] = useState(false);
 
   // It says aria-modal, so keyboard focus has to actually stay inside it
   useFocusTrap(dialogRef, open);
@@ -65,7 +80,9 @@ export function CartDrawer() {
   useEffect(() => {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeCart();
+      if (event.key !== "Escape") return;
+      setClosing(true);
+      window.setTimeout(closeCart, EXIT_MS);
     };
     document.addEventListener("keydown", onKey);
     const previous = document.body.style.overflow;
@@ -78,12 +95,24 @@ export function CartDrawer() {
 
   if (!open) return null;
 
+  /**
+   * Play the exit, then actually close. Local state is enough to drive it:
+   * `open` is still true throughout, so the component stays mounted, and the
+   * flag resets by itself because the next open is a fresh mount.
+   */
+  const requestClose = () => {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(closeCart, EXIT_MS);
+  };
+
   const toFreeDelivery = FREE_DELIVERY_OVER - subtotal;
 
   return (
     <div
       ref={dialogRef}
       className="fixed inset-0 z-[110]"
+      data-closing={closing}
       role="dialog"
       aria-modal="true"
       aria-label="Basket"
@@ -91,12 +120,12 @@ export function CartDrawer() {
       <button
         type="button"
         aria-label="Close basket"
-        onClick={closeCart}
-        className="absolute inset-0 bg-black/45"
+        onClick={requestClose}
+        className="lc-scrim absolute inset-0 bg-black/45 backdrop-blur-[2px]"
       />
 
       <div
-        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l shadow-2xl"
+        className="lc-panel absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l shadow-2xl"
         style={{ backgroundColor: "var(--lc-bg)", borderColor: "var(--lc-line)" }}
       >
         <div
@@ -108,12 +137,15 @@ export function CartDrawer() {
           </p>
           <button
             type="button"
-            onClick={closeCart}
+            onClick={requestClose}
             data-autofocus
-            className="lc-eyebrow inline-flex items-center gap-2"
+            className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
           >
             Close
-            <X className="size-4" aria-hidden />
+            <X
+              className="size-4 transition-transform duration-300 group-hover:rotate-90"
+              aria-hidden
+            />
           </button>
         </div>
 
@@ -129,16 +161,19 @@ export function CartDrawer() {
             <Link
               href={`${BASE}/shop`}
               onClick={closeCart}
-              className="lc-eyebrow inline-flex items-center gap-2 px-6 py-3 text-white"
-              style={{ backgroundColor: "var(--lc-accent)" }}
+              className="lc-btn lc-eyebrow group inline-flex items-center gap-2 px-6 py-3 text-white"
+              style={{ backgroundColor: "var(--lc-accent-solid)" }}
             >
               Browse the shop
-              <ArrowRight className="size-4" aria-hidden />
+              <ArrowRight
+                className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+                aria-hidden
+              />
             </Link>
           </div>
         ) : (
           <>
-            <ul className="flex-1 overflow-y-auto px-6">
+            <ul className="no-bar flex-1 overflow-y-auto px-6">
               {resolved.map((line) => (
                 <li
                   key={line.key}
@@ -233,8 +268,8 @@ export function CartDrawer() {
               <Link
                 href={`${BASE}/checkout`}
                 onClick={closeCart}
-                className="group mt-5 flex w-full items-center justify-center gap-3 px-6 py-4 text-white"
-                style={{ backgroundColor: "var(--lc-accent)" }}
+                className="lc-btn group mt-5 flex w-full items-center justify-center gap-3 px-6 py-4 text-white"
+                style={{ backgroundColor: "var(--lc-accent-solid)" }}
               >
                 <span className="lc-eyebrow" style={{ color: "inherit" }}>
                   Checkout
@@ -275,7 +310,7 @@ export function Stepper({
         onClick={() => onChange(value - 1)}
         disabled={value <= min}
         aria-label={`Fewer ${label}`}
-        className="grid size-9 place-items-center disabled:opacity-35"
+        className="lc-step grid size-9 place-items-center disabled:opacity-35"
       >
         <Minus className="size-3.5" aria-hidden />
       </button>
@@ -286,7 +321,7 @@ export function Stepper({
         type="button"
         onClick={() => onChange(value + 1)}
         aria-label={`More ${label}`}
-        className="grid size-9 place-items-center"
+        className="lc-step grid size-9 place-items-center"
       >
         <Plus className="size-3.5" aria-hidden />
       </button>

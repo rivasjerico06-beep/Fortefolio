@@ -166,14 +166,33 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   }
   ok("focus is trapped in the drawer", !escaped);
 
+  // The drawer plays an exit animation before it unmounts, so it is still in
+  // the DOM for a beat after Escape — marked `data-closing`. Both halves matter:
+  // the flag proves the animation ran, the count proves it actually left.
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(60);
+  ok(
+    "Escape starts the drawer's exit animation",
+    (await page.locator('[role="dialog"][data-closing="true"]').count()) === 1,
+  );
+
+  await page.waitForTimeout(700);
   ok("Escape closes the drawer", (await page.locator('[role="dialog"]').count()) === 0);
+
+  // The sideways gallery's own scrollbar is hidden — it is scroll-driven, and a
+  // native bar underneath it gives the effect away
+  await page.goto(`${BASE}/work/lumen-cafe`, { waitUntil: "networkidle" });
+  const galleryBar = await page.evaluate(() => {
+    const panel = document.querySelector(".hscene-panel");
+    return panel ? getComputedStyle(panel).scrollbarWidth : "missing";
+  });
+  ok("the pinned gallery hides its scrollbar", galleryBar === "none", galleryBar);
 
   await page.goto(`${LUMEN}/shop/lumen-mug`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Add to basket" }).click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600);
   await page.locator('[role="dialog"] button:has-text("Close")').click();
+  await page.waitForTimeout(400);
 
   await page.goto(`${LUMEN}/menu`, { waitUntil: "networkidle" });
   ok("basket survives navigation", (await basket()).includes("2 items"), await basket());

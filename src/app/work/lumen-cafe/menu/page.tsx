@@ -93,7 +93,7 @@ export default async function MenuPage() {
                       <div className="flex items-start gap-6">
                         {item.image && (
                           <span
-                            className="relative hidden size-24 shrink-0 overflow-hidden border sm:block"
+                            className="lc-frame relative hidden size-24 shrink-0 overflow-hidden border sm:block"
                             style={{ borderColor: "var(--lc-line)" }}
                           >
                             <Image
@@ -159,8 +159,8 @@ export default async function MenuPage() {
               </p>
               <Link
                 href={`${BASE}/shop`}
-                className="lc-eyebrow group mt-8 inline-flex items-center gap-3 px-8 py-4 text-white"
-                style={{ backgroundColor: "var(--lc-accent)", color: "#fff" }}
+                className="lc-btn lc-eyebrow group mt-8 inline-flex items-center gap-3 px-8 py-4 text-white"
+                style={{ backgroundColor: "var(--lc-accent-solid)", color: "#fff" }}
               >
                 Buy beans
                 <ArrowRight

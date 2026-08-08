@@ -46,7 +46,7 @@ export async function ArchiveView({ page }: { page: number }) {
                 >
                   <div className="lg:col-span-5">
                     <div
-                      className="relative aspect-[4/3] overflow-hidden border"
+                      className="lc-frame relative aspect-[4/3] overflow-hidden border"
                       style={{ borderColor: "var(--lc-line)" }}
                     >
                       <Image
@@ -107,9 +107,12 @@ export async function ArchiveView({ page }: { page: number }) {
             {page > 1 ? (
               <Link
                 href={pageHref(page - 1)}
-                className="lc-eyebrow inline-flex items-center gap-2"
+                className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
               >
-                <ArrowLeft className="size-4" aria-hidden />
+                <ArrowLeft
+                  className="size-4 transition-transform duration-500 group-hover:-translate-x-1"
+                  aria-hidden
+                />
                 Newer
               </Link>
             ) : (
@@ -122,15 +125,17 @@ export async function ArchiveView({ page }: { page: number }) {
                   <Link
                     href={pageHref(n)}
                     aria-current={n === page ? "page" : undefined}
-                    className="lc-eyebrow inline-flex size-9 items-center justify-center border"
+                    className={`lc-eyebrow inline-flex size-9 items-center justify-center border ${
+                      n === page ? "" : "lc-btn-ghost"
+                    }`}
                     style={
                       n === page
                         ? {
-                            borderColor: "var(--lc-accent)",
-                            backgroundColor: "var(--lc-accent)",
+                            borderColor: "var(--lc-accent-solid)",
+                            backgroundColor: "var(--lc-accent-solid)",
                             color: "#fff",
                           }
-                        : { borderColor: "var(--lc-line)" }
+                        : undefined
                     }
                   >
                     {n}
@@ -142,10 +147,13 @@ export async function ArchiveView({ page }: { page: number }) {
             {page < totalPages ? (
               <Link
                 href={pageHref(page + 1)}
-                className="lc-eyebrow inline-flex items-center gap-2"
+                className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
               >
                 Older
-                <ArrowRight className="size-4" aria-hidden />
+                <ArrowRight
+                  className="size-4 transition-transform duration-500 group-hover:translate-x-1"
+                  aria-hidden
+                />
               </Link>
             ) : (
               <span />

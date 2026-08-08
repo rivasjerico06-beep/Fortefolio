@@ -36,8 +36,14 @@ export default async function ProductPage({ params }: Params) {
   return (
     <>
       <div className="mx-auto max-w-[90rem] px-5 pt-16 sm:px-10 sm:pt-24">
-        <Link href={`${BASE}/shop`} className="lc-eyebrow inline-flex items-center gap-2">
-          <ArrowLeft className="size-4" aria-hidden />
+        <Link
+          href={`${BASE}/shop`}
+          className="lc-eyebrow group inline-flex items-center gap-2 hover:text-[var(--lc-fg)]"
+        >
+          <ArrowLeft
+            className="size-4 transition-transform duration-500 group-hover:-translate-x-1"
+            aria-hidden
+          />
           Shop
         </Link>
 
@@ -137,7 +143,7 @@ export default async function ProductPage({ params }: Params) {
                 <li key={other.slug} className="lc-row group">
                   <Link href={`${BASE}/shop/${other.slug}`}>
                     <div
-                      className="relative aspect-square overflow-hidden border"
+                      className="lc-frame relative aspect-square overflow-hidden border"
                       style={{ borderColor: "var(--lc-line)" }}
                     >
                       {other.image && (

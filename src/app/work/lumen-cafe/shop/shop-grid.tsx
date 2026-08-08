@@ -68,16 +68,10 @@ export function ShopGrid() {
               type="button"
               onClick={() => setCategory(option)}
               aria-pressed={category === option}
-              className="lc-eyebrow transition-colors"
-              style={
-                category === option
-                  ? {
-                      color: "var(--lc-accent-text)",
-                      textDecoration: "underline",
-                      textUnderlineOffset: "6px",
-                    }
-                  : undefined
-              }
+              // `.lc-chip` draws its own underline, so the chosen state is the
+              // same rule the pointer already previewed rather than a
+              // text-decoration that appears from nowhere
+              className="lc-chip lc-eyebrow"
             >
               {option}
             </button>
@@ -139,7 +133,7 @@ export function ShopGrid() {
               <li key={product.slug} className="lc-row group">
                 <Link href={`${BASE}/shop/${product.slug}`} className="block">
                   <div
-                    className="relative aspect-square overflow-hidden border"
+                    className="lc-frame relative aspect-square overflow-hidden border"
                     style={{ borderColor: "var(--lc-line)" }}
                   >
                     {product.image && (
@@ -163,7 +157,7 @@ export function ShopGrid() {
                     {!soldOut && product.stock < 6 && (
                       <span
                         className="lc-eyebrow absolute top-3 left-3 px-2.5 py-1"
-                        style={{ backgroundColor: "var(--lc-accent)", color: "#fff" }}
+                        style={{ backgroundColor: "var(--lc-accent-solid)", color: "#fff" }}
                       >
                         Only {product.stock} left
                       </span>

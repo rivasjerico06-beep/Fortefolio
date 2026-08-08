@@ -10,7 +10,12 @@ export function NoticeBar() {
   return (
     <div
       className="border-b text-white"
-      style={{ backgroundColor: "var(--lc-accent)", borderColor: "var(--lc-accent)" }}
+      style={{
+        // Small uppercase white text, so it needs the deeper tone: white on
+        // `--lc-accent` is 4.40:1, under the bar for text this size.
+        backgroundColor: "var(--lc-accent-solid)",
+        borderColor: "var(--lc-accent-solid)",
+      }}
     >
       <Marquee duration={52} className="py-2.5">
         {ticker.map((line) => (

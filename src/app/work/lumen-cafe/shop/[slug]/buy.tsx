@@ -47,15 +47,20 @@ export function BuyPanel({ product }: { product: Product }) {
                   onClick={() => setChosen((prev) => ({ ...prev, [group.id]: option.id }))}
                   aria-pressed={active}
                   disabled={soldOut}
-                  className="border px-4 py-2.5 text-[14px] transition-colors disabled:opacity-40"
+                  className={`border px-4 py-2.5 text-[14px] disabled:opacity-40 ${
+                    active ? "" : "lc-btn-ghost"
+                  }`}
                   style={
                     active
                       ? {
-                          borderColor: "var(--lc-accent)",
-                          backgroundColor: "var(--lc-accent)",
+                          borderColor: "var(--lc-accent-solid)",
+                          backgroundColor: "var(--lc-accent-solid)",
                           color: "#fff",
                         }
-                      : { borderColor: "var(--lc-line-strong)" }
+                      : // Deliberately unset: `.lc-btn-ghost` owns the resting
+                        // border, and an inline value here would outrank the
+                        // hover rule and pin it.
+                        undefined
                   }
                 >
                   {option.label}
@@ -106,10 +111,13 @@ export function BuyPanel({ product }: { product: Product }) {
               type="button"
               onClick={() => addLine(product, chosen, quantity)}
               disabled={remaining === 0}
-              className="group inline-flex flex-1 items-center justify-center gap-3 px-8 py-4 text-white disabled:opacity-50 sm:flex-none"
-              style={{ backgroundColor: "var(--lc-accent)" }}
+              className="lc-btn group inline-flex flex-1 items-center justify-center gap-3 px-8 py-4 text-white disabled:opacity-50 sm:flex-none"
+              style={{ backgroundColor: "var(--lc-accent-solid)" }}
             >
-              <ShoppingBag className="size-4" aria-hidden />
+              <ShoppingBag
+                className="size-4 transition-transform duration-500 group-hover:-translate-y-0.5"
+                aria-hidden
+              />
               <span className="lc-eyebrow" style={{ color: "inherit" }}>
                 {remaining === 0 ? "All of it is in your basket" : "Add to basket"}
               </span>
