@@ -11,7 +11,14 @@ import { chromium } from "playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+const page = await browser.newPage({
+  viewport: { width: 1280, height: 900 },
+  // A real browser identity: Vercel challenges obviously-headless clients when
+  // a suite hammers a production URL, and a 403 challenge page reads as a site
+  // failure when it is actually bot mitigation doing its job.
+  userAgent:
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+});
 
 const fails = [];
 const ok = (label, cond, detail = "") =>
