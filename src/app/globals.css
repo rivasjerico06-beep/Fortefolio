@@ -80,8 +80,13 @@
   --color-series-3: var(--series-3);
   --color-success: var(--success);
 
-  --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", monospace;
+  /* The inner fallbacks matter: Geist is only declared inside the portfolio's
+     own layout, so on the demo routes `--font-geist-*` is undefined. Without a
+     fallback inside the var(), the whole declaration would be invalid at
+     computed-value time and the text would drop to the browser default serif. */
+  --font-sans:
+    var(--font-geist-sans, ui-sans-serif), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono, ui-monospace), "Cascadia Code", monospace;
 }
 
 body {
