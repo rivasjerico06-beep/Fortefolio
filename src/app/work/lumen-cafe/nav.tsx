@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { BASE, nav } from "./data";
 import { getOpenState, openingHours } from "./hours";
 import { CartButton } from "./shop/cart";
+import { useFocusTrap } from "./use-focus-trap";
 
 /* ---------------------------------------------------------------------------
    Open / closed indicator
@@ -75,6 +76,25 @@ export function OpenIndicator({ className }: { className?: string }) {
 export function LumenHeader() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // The overlay covers the page, so it is a modal in practice even without the
+  // attribute — focus has to stay in it, and Escape has to close it.
+  useFocusTrap(overlayRef, menuOpen);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [menuOpen]);
 
   const isActive = (href: string) =>
     href === BASE ? pathname === BASE : pathname.startsWith(href);
@@ -131,6 +151,10 @@ export function LumenHeader() {
       {/* Full-screen overlay, phones only */}
       {menuOpen && (
         <div
+          ref={overlayRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
           className="fixed inset-0 z-50 flex flex-col md:hidden"
           style={{ backgroundColor: "var(--lc-bg)" }}
         >
@@ -139,6 +163,7 @@ export function LumenHeader() {
             <button
               type="button"
               onClick={() => setMenuOpen(false)}
+              data-autofocus
               className="lc-eyebrow inline-flex items-center gap-2"
             >
               Close

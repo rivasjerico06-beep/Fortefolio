@@ -86,16 +86,34 @@ for (const [name, path] of routes) {
   if (!res || res.status() !== 200) problems.push(`${path} returned HTTP ${res?.status()}`);
 
   await capture(page, `${OUT}/${name}.png`);
-
-  await page.setViewportSize({ width: 375, height: 800 });
-  await page.waitForTimeout(300);
-  const overflows = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth + 1,
-  );
-  if (overflows) problems.push(`${path} scrolls horizontally at 375px`);
-  await capture(page, `${OUT}/${name}-mobile.png`);
-
   await ctx.close();
+
+  // Mobile gets its own context and a *fresh load*, not a resize of the desktop
+  // one. Resizing after load hides a whole class of bug: a reveal that starts
+  // translated sideways overflows the viewport only until it fires, and by the
+  // time you have resized, it already has. That is exactly how an 8px
+  // horizontal scroll on two pages went unnoticed.
+  for (const width of [375, 390]) {
+    const mobileCtx = await browser.newContext({
+      viewport: { width, height: 800 },
+      reducedMotion: "reduce",
+    });
+    const mobile = await mobileCtx.newPage();
+    mobile.on("console", (m) => {
+      if (m.type() === "error") problems.push(`${path} @${width} console: ${m.text()}`);
+    });
+    mobile.on("pageerror", (e) => problems.push(`${path} @${width} pageerror: ${e.message}`));
+
+    await mobile.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
+    const overflow = await mobile.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    if (overflow > 1)
+      problems.push(`${path} scrolls horizontally at ${width}px (${overflow}px)`);
+
+    if (width === 390) await capture(mobile, `${OUT}/${name}-mobile.png`);
+    await mobileCtx.close();
+  }
 }
 
 // Dark-theme pass over the portfolio pages

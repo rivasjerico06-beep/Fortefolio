@@ -143,7 +143,26 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
   ok("adding opens the basket drawer", true);
 
-  await page.locator('[role="dialog"] button:has-text("Close")').click();
+  // The drawer claims aria-modal, so focus has to actually stay inside it —
+  // otherwise Tab walks into the page behind, where nobody can see the ring.
+  const inDialog = () =>
+    page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+  ok("focus moves into the open drawer", await inDialog());
+
+  let escaped = false;
+  for (let i = 0; i < 20; i += 1) {
+    await page.keyboard.press("Tab");
+    if (!(await inDialog())) {
+      escaped = true;
+      break;
+    }
+  }
+  ok("focus is trapped in the drawer", !escaped);
+
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(300);
+  ok("Escape closes the drawer", (await page.locator('[role="dialog"]').count()) === 0);
+
   await page.goto(`${LUMEN}/shop/lumen-mug`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Add to basket" }).click();
   await page.waitForTimeout(400);

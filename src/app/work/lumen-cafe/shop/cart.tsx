@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Minus, Plus, ShoppingBag, X } from "lucide-react";
 import { BASE } from "../data";
+import { useFocusTrap } from "../use-focus-trap";
 import { FREE_DELIVERY_OVER, formatPeso } from "./catalog";
 import {
   closeCart,
@@ -55,6 +56,10 @@ export function CartButton({ className }: { className?: string }) {
 
 export function CartDrawer() {
   const { lines, open, resolved, count, subtotal, delivery, total } = useCart();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // It says aria-modal, so keyboard focus has to actually stay inside it
+  useFocusTrap(dialogRef, open);
 
   // Escape closes it, and the page behind must not scroll while it is open
   useEffect(() => {
@@ -76,7 +81,13 @@ export function CartDrawer() {
   const toFreeDelivery = FREE_DELIVERY_OVER - subtotal;
 
   return (
-    <div className="fixed inset-0 z-[110]" role="dialog" aria-modal="true" aria-label="Basket">
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-[110]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Basket"
+    >
       <button
         type="button"
         aria-label="Close basket"
@@ -98,6 +109,7 @@ export function CartDrawer() {
           <button
             type="button"
             onClick={closeCart}
+            data-autofocus
             className="lc-eyebrow inline-flex items-center gap-2"
           >
             Close

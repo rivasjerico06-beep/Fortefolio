@@ -133,6 +133,20 @@ body {
   .js [data-reveal="right"] {
     transform: translate3d(28px, 0, 0);
   }
+
+  /* On a narrow screen a sideways start pushes past the viewport edge, and the
+     page gets a horizontal scroll until the element reveals. Below the small
+     breakpoint these rise instead — which reads better on a phone anyway.
+
+     Worth knowing when testing: this only shows up on a page *loaded* at mobile
+     width. Resizing a wide window down hides it, because by then the reveal has
+     already fired and the transform is gone. */
+  @media (width <= 640px) {
+    .js [data-reveal="left"],
+    .js [data-reveal="right"] {
+      transform: translate3d(0, 28px, 0);
+    }
+  }
   .js [data-reveal="scale"] {
     transform: scale(0.94);
   }
