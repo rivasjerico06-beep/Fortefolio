@@ -29,6 +29,10 @@ const strict = [
   "/work/lumen-cafe/blog/page/2",
   "/work/lumen-cafe/blog/washed-benguet-on-the-grinder",
   "/work/lumen-cafe/visit",
+  "/work/usa-equipment",
+  "/work/usa-equipment/equipment",
+  "/work/usa-equipment/equipment/LT-2214",
+  "/work/usa-equipment/quote",
 ];
 
 /**

@@ -335,7 +335,15 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   const dead = [];
   let checked = 0;
 
-  for (const route of ["", "/menu", "/shop", "/shop/washed-benguet", "/blog", "/visit", "/about"]) {
+  for (const route of [
+    "",
+    "/menu",
+    "/shop",
+    "/shop/washed-benguet",
+    "/blog",
+    "/visit",
+    "/about",
+  ]) {
     await page.goto(`${BASE}/work/lumen-cafe${route}`, { waitUntil: "networkidle" });
     await page.waitForTimeout(800);
 
@@ -365,8 +373,95 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok(
     "every hover in the demo actually responds",
     dead.length === 0,
-    dead.length ? `${dead.length}/${checked} dead: ${dead.slice(0, 5).join("; ")}` : `${checked} checked`,
+    dead.length
+      ? `${dead.length}/${checked} dead: ${dead.slice(0, 5).join("; ")}`
+      : `${checked} checked`,
   );
+}
+
+// --- USA Equipment: filtering, the quote list, and the CSS-only tabs --------
+// The three claims worth proving here: the fleet filters without a round trip,
+// the quote list survives navigation *and* a reload because it lives outside
+// React, and the unit tabs work off :target rather than a click handler.
+{
+  const YARD = `${BASE}/work/usa-equipment`;
+  const shown = () => page.locator('p[aria-live="polite"]').first().innerText();
+  // Read the badge's own attribute. Matching on text would also catch the mega
+  // menu's "1 hr callback", which is inside the header and starts with a digit.
+  const listed = async () => {
+    const badge = page.locator("[data-quote-count]");
+    return (await badge.count())
+      ? Number(await badge.first().getAttribute("data-quote-count"))
+      : 0;
+  };
+
+  await page.goto(`${YARD}/equipment`, { waitUntil: "networkidle" });
+  await page.evaluate(() => window.localStorage.removeItem("usaeq-quote"));
+  await page.reload({ waitUntil: "networkidle" });
+
+  ok("yard shows the full fleet", (await shown()).startsWith("24"), await shown());
+
+  await page.getByRole("button", { name: /^In yard/ }).click();
+  ok("status filter narrows the fleet", (await shown()).startsWith("15"), await shown());
+
+  await page.getByRole("button", { name: /^Light Towers$/ }).click();
+  ok("category and status filter together", (await shown()).startsWith("2"), await shown());
+
+  await page.getByRole("button", { name: /Clear all/ }).click();
+  ok("clear all restores the fleet", (await shown()).startsWith("24"), await shown());
+
+  // Search is a controlled input, so typing filters without submitting
+  await page.getByLabel("Search the fleet").fill("trash pump");
+  ok("search narrows by spec text", (await shown()).startsWith("1"), await shown());
+  await page.getByLabel("Search the fleet").fill("");
+
+  // Add two different units from the grid
+  await page.locator('[data-unit="LT-2214"]').getByRole("button", { name: /Add/ }).click();
+  ok("toast confirms the add", await page.getByText("LT-2214 added").isVisible());
+  await page.locator('[data-unit="GN-1140"]').getByRole("button", { name: /Add/ }).click();
+  ok("quote badge counts both units", (await listed()) === 2, String(await listed()));
+
+  // Navigate to a unit page: the list must not reset
+  await page.goto(`${YARD}/equipment/LT-2214`, { waitUntil: "networkidle" });
+  ok("quote list survives navigation", (await listed()) === 2, String(await listed()));
+
+  await page.reload({ waitUntil: "networkidle" });
+  ok("quote list survives a reload", (await listed()) === 2, String(await listed()));
+
+  // Tabs are :target, so the panel swaps on an ordinary anchor click
+  const terms = page.locator("#terms");
+  ok("specs tab is the default panel", await page.locator("#specs").isVisible());
+  ok("terms panel starts hidden", !(await terms.isVisible()));
+  await page.getByRole("link", { name: "Rental terms" }).first().click();
+  ok("clicking a tab reveals its panel", await terms.isVisible());
+  ok("and hides the previous one", !(await page.locator("#specs").isVisible()));
+
+  // Adding the unit already on the list should raise its quantity, not add a row
+  // The full model name: "Night-Lite" alone also matches the V-Series in the
+  // related-units strip, which is the same category by design.
+  await page.getByRole("button", { name: /Add Allmand Night-Lite Pro II to quote/ }).click();
+  ok("re-adding a unit increments it", (await listed()) === 3, String(await listed()));
+
+  // The quote wizard, end to end
+  await page.goto(`${YARD}/quote`, { waitUntil: "networkidle" });
+  ok(
+    "both units are on the list",
+    (await page.locator("li:has(button:text('Remove'))").count()) === 2,
+  );
+
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByLabel(/^Name/).fill("Jordan Reyes");
+  await page.getByLabel(/^Phone/).fill("(281) 555-0142");
+  await page.getByRole("button", { name: /Review/ }).click();
+  ok("review lists the units", await page.getByText("LT-2214 · Allmand").isVisible());
+
+  await page.getByRole("button", { name: /Send request/ }).click();
+  await page.waitForTimeout(500);
+  ok(
+    "the server action confirms the request",
+    await page.getByText("Request sent.").isVisible(),
+  );
+  ok("and the list is emptied afterwards", (await listed()) === 0, String(await listed()));
 }
 
 // --- Portfolio: theme toggle persists ---------------------------------------

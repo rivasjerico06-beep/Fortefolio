@@ -847,12 +847,7 @@ body {
   inset: -30%;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(255 255 255 / 0.14),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.14), transparent);
   animation: lc-sheen 14s cubic-bezier(0.5, 0, 0.2, 1) infinite;
 }
 
@@ -1212,6 +1207,238 @@ body {
   will-change: transform;
 }
 
+/* ==========================================================================
+   USA Equipment Co. — industrial theme
+
+   A yard-and-fleet site: hazard yellow on a concrete ground, navy for the
+   heavy bands, and mono for every number. Unlike Lumen this demo is pinned to
+   one palette in both themes — the identity is a painted machine, and a dark
+   "mode" of it would be a different company. `color-scheme: light` keeps form
+   controls and the scrollbar in step with that.
+
+   The palette arrived from the mockup with four failures. Every ratio here was
+   measured in the browser against the *darker* of the two grounds the colour
+   actually lands on — a status colour appears on both white cards and the
+   concrete page, so clearing white alone is not enough:
+
+     - the mono meta grey (#8A8F94) ran at 2.83:1 on the concrete ground
+     - the IN YARD green (#2E7D4F) at 4.38:1
+     - the ON RENT amber (#C77700) at 3.00:1 — the one status a renter most
+       needs to read correctly
+     - the focus ring was hazard yellow, 1.35:1 against the ground, which is
+       not a visible focus indicator at all
+
+   The corrected values are below with their ratios. The greys converge more
+   than the mockup's did — on a ground this light there is simply not room for
+   three distinct passing steps — so the hierarchy between secondary and
+   tertiary text is carried by size, weight and letter-spacing instead.
+   ========================================================================== */
+
+.usaeq {
+  color-scheme: light;
+
+  --ue-bg: #efefec;
+  --ue-surface: #ffffff;
+  --ue-surface-alt: #e2e4e0;
+  --ue-ink: #16191c;
+  --ue-ink-2: #5c6268; /* 5.36:1 on --ue-bg */
+  --ue-ink-3: #646a6f; /* 4.76:1 on --ue-bg — was #8A8F94 at 2.83:1 */
+  --ue-line: #d6d8d4;
+  --ue-line-strong: #16191c;
+
+  --ue-navy: #0f2540;
+  --ue-navy-lift: #173355; /* the hover step on a navy ground */
+  --ue-on-navy: #f7f8f6; /* 14.5:1 */
+  --ue-on-navy-2: #c3cdd9; /* 9.6:1 — replaces opacity on link text */
+
+  --ue-yellow: #ffc72c; /* carries --ue-ink at 11.3:1 */
+  --ue-yellow-deep: #e8af12; /* the hover step under a yellow fill */
+
+  /* Status. Each is read as 11px mono text on both #FFFFFF and --ue-bg, so
+     each clears 4.5:1 against the *darker* of the two grounds. */
+  --ue-in-yard: #2b7449; /* 4.93:1 — was #2E7D4F at 4.38:1 */
+  --ue-on-rent: #965900; /* 4.89:1 — was #C77700 at 3.00:1 */
+  --ue-inbound: #2563a8; /* 5.32:1 */
+
+  /* One curve, three speeds — the same decelerating ease the portfolio's
+     reveals use, so the demo's motion agrees with the page it sits in. */
+  --ue-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ue-fast: 130ms;
+  --ue-base: 220ms;
+
+  background: var(--ue-bg);
+  color: var(--ue-ink);
+  font-family: var(--font-ue-sans), "Public Sans", system-ui, sans-serif;
+}
+
+.usaeq h1,
+.usaeq h2,
+.usaeq h3,
+.usaeq .ue-display {
+  font-family: var(--font-ue-display), "Archivo", system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+
+.usaeq .ue-mono {
+  font-family: var(--font-ue-mono), "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.usaeq ::selection {
+  background: var(--ue-yellow);
+  color: var(--ue-ink);
+}
+
+/* The mockup's yellow ring measures 1.53:1 on the concrete ground — invisible
+   as a focus indicator. Ink carries it on light, and the yellow comes back on
+   the navy bands where it reads at 9.9:1. */
+.usaeq :focus-visible {
+  outline: 3px solid var(--ue-ink);
+  outline-offset: 2px;
+}
+.usaeq .ue-on-dark :focus-visible {
+  outline-color: var(--ue-yellow);
+}
+
+/* The viewport's bar belongs to the document, so the demo's own line colour
+   cannot reach it through the cascade — this repeats --ue-line-strong and must
+   move with it. */
+:root:has(.usaeq) {
+  scrollbar-color: #b9bcb7 transparent;
+}
+
+/* Tabs on the unit page, driven by `:target` rather than by state.
+
+   The panel matching the URL fragment shows; with no fragment the first one
+   does. That buys three things a click handler does not: the tabs are
+   deep-linkable (`…/LT-2214#terms` opens on the terms), they work with no
+   JavaScript, and following one is the browser's own anchor navigation, so the
+   back button steps through them. They are ordinary links, not an ARIA
+   tablist — a tablist that cannot respond to arrow keys would be a worse lie
+   than the plain navigation this actually is. */
+.ue-tabpanel {
+  display: none;
+}
+.ue-tabpanel:target {
+  display: block;
+}
+.ue-tabs:not(:has(.ue-tabpanel:target)) .ue-tabpanel-default {
+  display: block;
+}
+
+.ue-tab {
+  background: var(--ue-bg);
+  color: var(--ue-ink-2);
+}
+.ue-tabs:has(#specs:target) .ue-tab[href="#specs"],
+.ue-tabs:has(#docs:target) .ue-tab[href="#docs"],
+.ue-tabs:has(#terms:target) .ue-tab[href="#terms"],
+.ue-tabs:not(:has(.ue-tabpanel:target)) .ue-tab[href="#specs"] {
+  background: #ffffff;
+  color: var(--ue-ink);
+}
+
+/* Hazard tape. The stripe is a repeating gradient rather than an image, so it
+   scales to any length and costs no request. */
+.ue-hazard {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--ue-yellow) 0 16px,
+    var(--ue-ink) 16px 32px
+  );
+}
+.ue-hazard-live {
+  animation: ue-hazard 1.6s linear infinite;
+}
+@keyframes ue-hazard {
+  to {
+    background-position: 64px 0;
+  }
+}
+
+/* The status LED beside an IN YARD unit. Decoration only — the state is also
+   written out in text beside it, so stopping the pulse loses nothing. */
+.ue-led {
+  animation: ue-led 2.2s ease-out infinite;
+}
+@keyframes ue-led {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  60% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+/* Entrance animations for content above the fold, where there is no scroll to
+   trigger a reveal. `both` holds the start state only while the animation is
+   pending, so nothing can be stranded invisible — and the global
+   reduced-motion rule at the foot of this file collapses them all to 0.01ms. */
+.ue-rise {
+  animation: ue-rise 0.55s var(--ue-ease) both;
+  animation-delay: calc(var(--ue-delay, 0) * 1ms);
+}
+@keyframes ue-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+  }
+}
+
+/* The rule that wipes under the hero's last word */
+.ue-wipe {
+  transform-origin: left;
+  animation: ue-wipe 0.5s var(--ue-ease) 520ms both;
+}
+@keyframes ue-wipe {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.ue-pop {
+  animation: ue-pop 320ms ease-out;
+}
+@keyframes ue-pop {
+  45% {
+    transform: scale(1.4);
+  }
+}
+
+.ue-toast {
+  animation: ue-toast 260ms var(--ue-ease);
+}
+@keyframes ue-toast {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.96);
+  }
+}
+
+.ue-bar-up {
+  animation: ue-bar-up 200ms var(--ue-ease);
+}
+@keyframes ue-bar-up {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.ue-menu-in {
+  animation: ue-menu-in 150ms var(--ue-ease);
+}
+@keyframes ue-menu-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
 /* Printing has no scroll and no hover — show everything, plainly */
 @media print {
   [data-reveal],
@@ -1243,7 +1470,15 @@ body {
   .lc-crawl,
   .js .lc-enter,
   .js .lc-stagger > *,
-  .js .lc-swap {
+  .js .lc-swap,
+  .ue-hazard-live,
+  .ue-led,
+  .ue-rise,
+  .ue-wipe,
+  .ue-pop,
+  .ue-toast,
+  .ue-bar-up,
+  .ue-menu-in {
     animation: none !important;
   }
   .lc-rule[data-reveal],

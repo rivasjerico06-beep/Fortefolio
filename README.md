@@ -132,6 +132,7 @@ src/
       contact/       contact form
     work/            the demo sites — no portfolio chrome, own identity each
       lumen-cafe/    local-business marketing site
+      usa-equipment/ equipment yard: fleet, unit pages, quote list
       nimbus/        SaaS landing page with interactive pricing
       atlas/         analytics dashboard, charts hand-built in SVG
       verde/         storefront with live filtering and a cart
@@ -155,6 +156,10 @@ header and footer while still sharing the root `<html>` document.
 **Lumen Café is an art-directed editorial site.** It was designed in Figma Make
 from the brief in [`design/figma-prompts/lumen-cafe.md`](design/figma-prompts/lumen-cafe.md)
 and rebuilt here — see [its own section below](#lumen-café).
+
+**USA Equipment Co. is a rental-and-sales yard.** It came out of an AI design
+tool as a single HTML prototype and was rebuilt here as real routes — see
+[its own section below](#usa-equipment-co).
 
 The other three still reproduce a layout clients recognise — a theme with a
 pricing plugin, a wp-admin plugin screen, and a WooCommerce shop archive — but
@@ -260,6 +265,57 @@ the wp-admin screen is pinned to a fixed light palette, those variables are
 re-declared on the Atlas demo's root with the light steps of the validated
 categorical palette. Remove that block and the charts inherit dark-mode steps
 against a light panel, quietly breaking their contrast validation.
+
+### USA Equipment Co.
+
+A rental-and-sales yard in Magnolia, Texas: hazard yellow on a concrete ground,
+navy for the heavy bands, and mono for every number. It arrived as a handoff
+bundle from Claude Design — one HTML prototype with four screens behind a single
+component's state — and was rebuilt as four real routes. Four things in it are
+worth knowing about.
+
+**The chrome ships no JavaScript.** The mega menus are `:hover` and
+`:focus-within` on a wrapper holding both the trigger and the panel, so focusing
+a top-level link opens its panel and the whole thing is keyboard operable with
+no handler. The mobile menu is a native `<details>`. The unit tabs run on
+`:target` — which is why `…/equipment/LT-2214#terms` opens on the rental terms,
+why they work with scripting off, and why the back button steps through them.
+The rules live in the `.usaeq` block of [`globals.css`](src/app/globals.css); do
+not "upgrade" them to state.
+
+**The palette is measured, not eyeballed.** The prototype failed contrast in
+four places against the ground each colour actually sits on: the mono meta grey
+at 2.83:1, IN YARD at 4.38:1, ON RENT at 3.00:1, and a focus ring in hazard
+yellow at 1.35:1 — which is not a focus indicator at all. Every status colour is
+now checked against the **darker** of the two grounds it lands on, because a
+badge appears on both white cards and the concrete page. The corrected values
+and their ratios are in the same `.usaeq` block. The yellow ring survives only
+on the navy bands, where it reads at 9.9:1.
+
+**The catalogue is static and still filters instantly.** `/equipment` reads the
+URL through `useSearchParams`, which cannot prerender — so it sits inside a
+`<Suspense>` whose fallback is
+[`StaticFleet`](src/app/work/usa-equipment/equipment/fleet.tsx), the same
+catalogue rendered on the server with its filters as real links. That fallback
+is what lands in the static HTML, so a crawler and a reader with no JavaScript
+get all 24 units and working filter links, hydration swaps in the live version,
+and the route still builds to a file. The fallback is not a spinner, and
+replacing it with one would quietly cost the page its crawlability.
+
+**No rate is invented.** Every figure is an em dash beside a line telling you to
+call, and the footer says the photos and rates are placeholder data. A rental
+rate depends on term, delivery radius and damage waiver; a number made up for a
+demo is worse than no number. The photo slots are the same idea — a labelled box
+at the right aspect ratio, holding its space for the day real files arrive,
+rather than stock images of somebody else's machines.
+
+The quote list uses the same module-store pattern as the Lumen basket
+([`quote-store.ts`](src/app/work/usa-equipment/quote-store.ts)), so units added
+anywhere survive navigation and a reload. `requestQuote` in
+[`actions.ts`](src/app/work/usa-equipment/actions.ts) re-resolves every unit
+number against the fleet rather than trusting what the browser sent — there is
+no total to protect the way a checkout has, but the browser still does not get
+to describe the yard's inventory back to it.
 
 ## Notes on some deliberate choices
 

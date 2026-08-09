@@ -2,11 +2,12 @@
  * The portfolio's case studies. Each one points at a live demo site that lives
  * under /work/<slug> in this same app, so every project links to something real.
  *
- * All four demos reproduce a WordPress layout — a classic business theme, a
- * theme with a pricing plugin, a wp-admin plugin screen, and a WooCommerce shop
- * archive — but are built as static Next.js rather than PHP. The copy says so
- * plainly: the point is that the familiar layout does not require the weight
- * that usually comes with it.
+ * Two of them — Lumen Café and USA Equipment — were drafted in a design tool
+ * and rebuilt here against measured tokens. The other three reproduce a
+ * WordPress layout — a theme with a pricing plugin, a wp-admin plugin screen,
+ * and a WooCommerce shop archive — but are built as static Next.js rather than
+ * PHP. The copy says so plainly: the point is that the familiar layout does not
+ * require the weight that usually comes with it.
  */
 export type Project = {
   slug: string;
@@ -54,6 +55,45 @@ export const projects: readonly Project[] = [
         label: "Prices trusted from the browser",
         value: "0",
         note: "checkout reprices from the catalogue",
+      },
+    ],
+  },
+  {
+    slug: "usa-equipment",
+    name: "USA Equipment Co.",
+    kind: "Equipment yard, designed then built",
+    summary:
+      "A rental-and-sales yard site: live unit status, a fleet you can filter in a frame, and a quote list that survives navigation — with the menus, mobile nav and tabs all built without JavaScript.",
+    year: "2026",
+    stack: ["Next.js", "Server Components", "Tailwind CSS"],
+    accent: "#e8af12",
+    brief:
+      "USA Equipment is a locally owned yard in Magnolia, Texas, renting and selling to contractors, cities and walk-ins. They wanted the site to feel like the yard does — painted steel, stencilled unit numbers, hazard tape — and to answer the only two questions a customer actually has: do you have it, and can I pick it up today.",
+    challenge:
+      "The design came out of an AI design tool as a single HTML prototype: four screens behind one component's state, every colour inline, and three Google Fonts loaded over the network. It looked right. Measured, its palette failed contrast in four places — including the ON RENT amber at 3.00:1, which is the one status a renter most needs to read, and a focus ring in hazard yellow at 1.35:1 against the ground.",
+    approach: [
+      "Rebuild the four screens as four real routes rather than one component switching on state, so every unit has a URL, the catalogue is crawlable, and the back button works.",
+      "Correct the palette against the darker of the two grounds each colour lands on, since a status appears on both white cards and the concrete page — the meta grey from 2.83:1 to 4.76:1, ON RENT from 3.00:1 to 4.89:1, IN YARD from 4.38:1 to 4.93:1, and the focus ring from hazard yellow to ink, keeping the yellow only on the navy bands where it reads at 9.9:1.",
+      "Build the mega menus on :hover and :focus-within, the mobile menu as a native <details>, and the unit tabs on :target — so the entire chrome ships no JavaScript, the tabs are deep-linkable, and the back button steps through them.",
+      "Render the whole fleet server-side and hydrate only the filtering, so a crawler and a reader with no JavaScript both get the full catalogue while a chip click repaints on the same frame.",
+      "Keep the quote list in a module-level store rather than React state, so units added on any page survive navigation and a reload — and re-resolve every unit number against the fleet inside the Server Action, because a request describing the yard's own inventory back to it is not something to take on trust.",
+      "Leave every rate as an em dash. A rental rate depends on term, delivery radius and waiver, and an invented number is worse than no number — so the demo says so rather than filling the gap.",
+    ],
+    outcome: [
+      {
+        label: "JavaScript in the chrome",
+        value: "0KB",
+        note: "menus, mobile nav and tabs are CSS",
+      },
+      {
+        label: "Contrast failures fixed",
+        value: "4",
+        note: "found by measuring, not by eye",
+      },
+      {
+        label: "Invented prices shown",
+        value: "0",
+        note: "rates are blank until the yard sets them",
       },
     ],
   },
