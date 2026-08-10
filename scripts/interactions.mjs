@@ -473,11 +473,20 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
 
   await page.goto(TK, { waitUntil: "networkidle" });
 
+  /* Not a post count. Nothing on this feed is permanent any more — the seeded
+     cast was deleted when accounts became real, and everything a visitor
+     writes expires after 24 hours — so an empty feed is a correct state, not a
+     failure. What has to hold is that a signed-out visitor gets a working
+     page: either posts, or the empty state that invites them to make one. */
   const posts = page.locator("main li:has(time)");
+  const empty = await page
+    .getByText("Nothing here yet")
+    .isVisible()
+    .catch(() => false);
   ok(
     "talkapo feed renders for a signed-out visitor",
-    (await posts.count()) >= 4,
-    `${await posts.count()} posts`,
+    (await posts.count()) > 0 || empty,
+    `${await posts.count()} posts${empty ? ", empty state shown" : ""}`,
   );
 
   /* The feed has to be in the HTML, not painted in by script — that is the

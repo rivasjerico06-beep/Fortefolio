@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Search } from "lucide-react";
 import { getFeed, getMyProfile, isLive } from "./data";
 import { Feed } from "./feed";
 import { LiveBadge, ReadOnlyNotice } from "./parts";
@@ -31,8 +30,17 @@ export default async function TalkapoHome() {
   const [posts, me] = await Promise.all([getFeed(), getMyProfile()]);
 
   return (
-    <main className="flex min-w-0 flex-1">
-      <div className="flex max-w-[600px] min-w-0 flex-1 flex-col border-r border-[var(--tk-border)]">
+    /* The right rail is gone along with the trending panel it existed to hold.
+       Removing only the panel would have left a single disabled search box
+       alone in a 350px column — a dead control occupying a third of the
+       screen — so the rail went with it. Real search lives in Messages, where
+       it does something.
+
+       The feed keeps its 600px measure and centres instead of stretching:
+       column width is a readability decision, not a leftover from what used to
+       sit beside it. Borders on both edges so it still reads as a column. */
+    <main className="flex min-w-0 flex-1 justify-center">
+      <div className="flex w-full max-w-[600px] min-w-0 flex-col border-[var(--tk-border)] sm:border-x">
         <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--tk-border)] px-6">
           <h1 className="tk-display text-xl">For You</h1>
           <LiveBadge live={isLive} />
@@ -42,49 +50,6 @@ export default async function TalkapoHome() {
 
         <Feed posts={posts} me={me} />
       </div>
-
-      {/* Trending rail — static copy, and labelled as such rather than dressed
-          up as data the demo does not have. */}
-      <aside className="tk-scroll hidden w-[350px] flex-col gap-6 overflow-y-auto p-6 lg:flex">
-        <div className="relative">
-          <Search
-            size={18}
-            aria-hidden
-            className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--tk-muted)]"
-          />
-          <label htmlFor="tk-search" className="sr-only">
-            Search Talkapo
-          </label>
-          <input
-            id="tk-search"
-            type="search"
-            placeholder="Search"
-            disabled
-            title="Search is not part of this demo"
-            className="w-full cursor-not-allowed rounded-full border border-transparent bg-[var(--tk-secondary)] py-3 pr-4 pl-12 opacity-60 outline-none"
-          />
-        </div>
-
-        <div className="rounded-2xl border border-[var(--tk-border)] bg-[var(--tk-card)] p-4">
-          <h2 className="tk-display mb-4 text-lg">What&rsquo;s happening</h2>
-          <ul className="flex flex-col gap-4">
-            {[
-              { category: "Technology · Trending", topic: "#React19", posts: "12.5K" },
-              { category: "Design · Trending", topic: "Figma Config", posts: "8,240" },
-              { category: "Development · Popular", topic: "Vite 8", posts: "5,102" },
-            ].map((trend) => (
-              <li key={trend.topic}>
-                <p className="mb-0.5 text-xs text-[var(--tk-muted)]">{trend.category}</p>
-                <p className="font-bold">{trend.topic}</p>
-                <p className="mt-0.5 text-xs text-[var(--tk-muted)]">{trend.posts} posts</p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 border-t border-[var(--tk-border)] pt-3 text-xs text-[var(--tk-muted)]">
-            Sample data — trends are not computed in this demo.
-          </p>
-        </div>
-      </aside>
     </main>
   );
 }
