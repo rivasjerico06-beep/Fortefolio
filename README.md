@@ -21,17 +21,17 @@ npm run dev          # http://localhost:3000
 
 ## Scripts
 
-| Command                         | What it does                                                                     |
-| ------------------------------- | -------------------------------------------------------------------------------- |
-| `npm run dev`                   | Dev server with Turbopack and hot reload                                         |
-| `npm run build`                 | Production build (every route prerenders except Talkapo's two signed-in screens) |
-| `npm start`                     | Serve the production build                                                       |
-| `npm run lint`                  | ESLint with the Next.js config                                                   |
-| `npm run typecheck`             | TypeScript with no emit                                                          |
-| `npm run format`                | Prettier, including Tailwind class sorting                                       |
-| `npm run shots`                 | Visual smoke test — see below                                                    |
-| `npm run test:demos`            | Interaction test — drives the demos for real                                     |
-| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible                                 |
+| Command                         | What it does                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------ |
+| `npm run dev`                   | Dev server with Turbopack and hot reload                                       |
+| `npm run build`                 | Production build (every route prerenders except Talkapo, which is per-session) |
+| `npm start`                     | Serve the production build                                                     |
+| `npm run lint`                  | ESLint with the Next.js config                                                 |
+| `npm run typecheck`             | TypeScript with no emit                                                        |
+| `npm run format`                | Prettier, including Tailwind class sorting                                     |
+| `npm run shots`                 | Visual smoke test — see below                                                  |
+| `npm run test:demos`            | Interaction test — drives the demos for real                                   |
+| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible                               |
 
 ### Visual smoke test
 
@@ -365,9 +365,11 @@ a trigger can return a message worth showing the person who tripped it. Together
 that is what makes a publicly writable feed safe to leave unattended on a
 portfolio.
 
-**Two routes are not static**, and they cannot be: `/messages` and `/login` are
-per-session. The feed is static with a 30-second revalidate, and anything newer
-arrives over the socket.
+**Talkapo does not prerender**, and cannot: every screen depends on who is
+asking. The feed carries `likedByMe` on every row, so there is no single version
+of it to cache and hand to two different people. It is still server-rendered
+HTML with the whole feed in it — the property that matters for crawling — just
+built per request. Everything outside `/work/talkapo` still prerenders.
 
 Two departures from the mockup worth knowing about. The avatars are drawn from a
 hash of the handle rather than hotlinked from Unsplash — the originals were
@@ -423,10 +425,9 @@ accepting npm's suggestion to downgrade Next.js to 9.3.3.
 
 ## Deploying
 
-Everything prerenders to static HTML except two routes: Talkapo's `/messages`
-and `/login`, which are per-session and so render on request. The feed itself is
-static with a 30-second revalidate. If you drop Talkapo, the whole site is
-static again and any static host works. On Vercel:
+Everything prerenders to static HTML except Talkapo, whose three routes are
+all per-session and render on request. Drop Talkapo and the whole site is static
+again, and any static host works. On Vercel:
 
 ```bash
 npm i -g vercel

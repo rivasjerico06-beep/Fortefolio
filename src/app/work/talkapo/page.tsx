@@ -14,12 +14,18 @@ export const metadata: Metadata = {
  * The feed is public, so it renders on the server for everyone — a signed-out
  * visitor and a crawler both get the whole list in the HTML.
  *
- * `revalidate` rather than full dynamic rendering: the page is regenerated at
- * most twice a minute, so it is a cached file for almost every request, and
- * anything newer than that arrives over the realtime socket instead. That keeps
- * the route cheap without the feed ever looking stale.
+ * It renders per request rather than being cached, and that is not a
+ * concession: every row carries `likedByMe`, so the feed is personalised and
+ * there is no single version of it to hand two different people. The layout
+ * reads the session cookie for the same reason. An earlier draft set
+ * `revalidate = 30`, which did nothing once a project was configured — reading
+ * cookies opts the route out of static rendering — and would have been wrong
+ * even if it had worked, because it would have served one visitor's likes to
+ * another.
+ *
+ * What matters for crawling survives regardless: this is still server-rendered
+ * HTML containing the whole feed, not a client-side fetch.
  */
-export const revalidate = 30;
 
 export default async function TalkapoHome() {
   const [posts, me] = await Promise.all([getFeed(), getMyProfile()]);

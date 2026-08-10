@@ -116,7 +116,7 @@ export const projects: readonly Project[] = [
       "Put the access rules in row-level security, not the UI. The feed is world-readable, writes require an account and are checked against the caller's own profile, and the lobby refuses to send a single row to an anonymous session — so the login gate is true rather than cosmetic.",
       "Route every write through a Server Action, so the session cookie stays httpOnly and the browser never holds a token to leak. The client sends intent; the database resolves who is asking.",
       "Rate-limit inserts with a trigger rather than a policy, because a policy can only say no while a trigger can return a message worth showing, and expire everything a visitor writes after 24 hours so the demo cleans itself.",
-      "Render the public feed on the server with a short revalidate, then subscribe to realtime for anything newer — a crawler and a no-JavaScript reader get the whole feed, and the socket only adds freshness.",
+      "Render the public feed on the server so a crawler and a reader with no JavaScript get the whole thing, and subscribe to realtime for anything newer. It renders per request rather than cached, because every row carries whether you liked it — a personalised feed has no one version to hand two people.",
       "Fall back to seed content when no Supabase project is configured, so the site still builds, still prerenders and still demonstrates the UI for anyone who clones it — and says plainly that it is read-only rather than pretending.",
     ],
     outcome: [

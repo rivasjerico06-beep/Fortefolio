@@ -183,6 +183,34 @@ function one<T>(value: T | T[] | null): T | null {
   return value;
 }
 
+/**
+ * Author embed, named by its foreign key rather than by table.
+ *
+ * `talkapo_profiles(...)` on its own is ambiguous and PostgREST rejects the
+ * whole query with PGRST201: a post reaches a profile two ways — directly
+ * through `author_id`, and many-to-many through `talkapo_likes` acting as a
+ * junction table. Naming the constraint says which one is meant. Any future
+ * table with two paths to profiles needs the same treatment.
+ */
+const AUTHOR = "talkapo_profiles!talkapo_posts_author_id_fkey(id, handle, display_name)";
+
+/**
+ * Report a failed query instead of swallowing it.
+ *
+ * Falling back to seed content is right when no project is configured. It is
+ * badly wrong when a project *is* configured and the query failed, because the
+ * page then shows fixtures that look exactly like real data — which is how the
+ * ambiguous embed above survived a full test pass unnoticed. The fallback still
+ * happens, so a broken query degrades instead of 500ing, but it says so where
+ * somebody will see it.
+ */
+function reportQueryFailure(what: string, error: { message: string; code?: string }) {
+  console.error(
+    `[talkapo] ${what} query failed — falling back to seed content. ` +
+      `${error.code ? `${error.code}: ` : ""}${error.message}`,
+  );
+}
+
 function toProfile(row: ProfileRow | null): Profile {
   return row
     ? { id: row.id, handle: row.handle, displayName: row.display_name }
@@ -219,14 +247,19 @@ export async function getFeed(): Promise<Post[]> {
   const { data, error } = await supabase
     .from("talkapo_posts")
     .select(
-      "id, content, created_at, talkapo_profiles!inner(id, handle, display_name), talkapo_likes(profile_id), talkapo_comments(id)",
+      `id, content, created_at, ${AUTHOR}, talkapo_likes(profile_id), talkapo_comments(id)`,
     )
     .order("created_at", { ascending: false })
     .limit(50);
 
-  // A misconfigured or unreachable project must not take the page down — the
-  // seed content is a better answer than a 500 on somebody's portfolio.
-  if (error || !data) return SEED_POSTS;
+  // An unreachable project must not take the page down — seed content is a
+  // better answer than a 500 on somebody's portfolio — but a failure here is
+  // logged rather than passed off as data.
+  if (error) {
+    reportQueryFailure("feed", error);
+    return SEED_POSTS;
+  }
+  if (!data) return SEED_POSTS;
 
   return (data as unknown as PostRow[]).map((row) => {
     const likes = row.talkapo_likes ?? [];
@@ -252,7 +285,11 @@ export async function getComments(postId: string): Promise<Comment[]> {
     .eq("post_id", postId)
     .order("created_at", { ascending: true });
 
-  if (error || !data) return SEED_COMMENTS[postId] ?? [];
+  if (error) {
+    reportQueryFailure("comments", error);
+    return SEED_COMMENTS[postId] ?? [];
+  }
+  if (!data) return SEED_COMMENTS[postId] ?? [];
 
   return data.map((row) => ({
     id: row.id as string,
@@ -283,7 +320,11 @@ export async function getLobby(): Promise<LobbyMessage[] | null> {
     .order("created_at", { ascending: true })
     .limit(100);
 
-  if (error || !data) return SEED_LOBBY;
+  if (error) {
+    reportQueryFailure("lobby", error);
+    return SEED_LOBBY;
+  }
+  if (!data) return SEED_LOBBY;
 
   return data.map((row) => ({
     id: row.id as string,
