@@ -464,6 +464,59 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok("and the list is emptied afterwards", (await listed()) === 0, String(await listed()));
 }
 
+// --- Talkapo: the feed reads publicly, everything else is gated -------------
+// These run whether or not a Supabase project is configured, because the claim
+// being tested holds in both modes: the feed is readable by a signed-out
+// visitor, and every write and the whole lobby are not.
+{
+  const TK = `${BASE}/work/talkapo`;
+
+  await page.goto(TK, { waitUntil: "networkidle" });
+
+  const posts = page.locator("main li:has(time)");
+  ok(
+    "talkapo feed renders for a signed-out visitor",
+    (await posts.count()) >= 4,
+    `${await posts.count()} posts`,
+  );
+
+  // The feed has to be in the HTML, not painted in by script — that is the
+  // difference between a crawlable page and a client-rendered one.
+  const html = await (await page.request.get(TK)).text();
+  ok("feed is in the server HTML", html.includes("Elena Rostova"));
+
+  ok(
+    "composer is replaced by a login prompt",
+    await page.getByText("Log in to post to the feed.").isVisible(),
+  );
+
+  // Liking while signed out must explain itself rather than silently failing
+  await page.getByRole("button", { name: "Like" }).first().click();
+  await page.waitForTimeout(250);
+  ok(
+    "liking signed out prompts for an account",
+    await page.getByText("Log in to like posts.").first().isVisible(),
+  );
+  ok(
+    "and offers the log-in link",
+    await page.getByText("Have an account? Log in").first().isVisible(),
+  );
+
+  // The lobby is refused by the database, so the page has nothing to reveal
+  await page.goto(`${TK}/messages`, { waitUntil: "networkidle" });
+  ok("messages are gated", await page.getByText("Messages are for members").isVisible());
+  const lobbyHtml = await (await page.request.get(`${TK}/messages`)).text();
+  ok(
+    "no lobby content is sent to a signed-out visitor",
+    !lobbyHtml.includes("Going great! Just wrapping up"),
+  );
+
+  // Nav items the demo does not implement say so instead of going nowhere
+  await page.goto(TK, { waitUntil: "networkidle" });
+  const explore = page.getByTitle("Explore is not part of this demo");
+  ok("unimplemented nav is disabled, not a dead link", (await explore.count()) === 1);
+}
+
 // --- Portfolio: theme toggle persists ---------------------------------------
 await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 const before = await page.evaluate(() => document.documentElement.dataset.theme);

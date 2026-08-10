@@ -2,12 +2,13 @@
  * The portfolio's case studies. Each one points at a live demo site that lives
  * under /work/<slug> in this same app, so every project links to something real.
  *
- * Two of them — Lumen Café and USA Equipment — were drafted in a design tool
- * and rebuilt here against measured tokens. The other three reproduce a
- * WordPress layout — a theme with a pricing plugin, a wp-admin plugin screen,
- * and a WooCommerce shop archive — but are built as static Next.js rather than
- * PHP. The copy says so plainly: the point is that the familiar layout does not
- * require the weight that usually comes with it.
+ * Three of them — Lumen Café, USA Equipment and Talkapo — were drafted in a
+ * design tool and rebuilt here against measured tokens. Talkapo is the only one
+ * with a real database behind it; the rest are static by design. The other
+ * three reproduce a WordPress layout — a theme with a pricing plugin, a
+ * wp-admin plugin screen, and a WooCommerce shop archive — but are built as
+ * static Next.js rather than PHP. The copy says so plainly: the point is that
+ * the familiar layout does not require the weight that usually comes with it.
  */
 export type Project = {
   slug: string;
@@ -94,6 +95,45 @@ export const projects: readonly Project[] = [
         label: "Invented prices shown",
         value: "0",
         note: "rates are blank until the yard sets them",
+      },
+    ],
+  },
+  {
+    slug: "talkapo",
+    name: "Talkapo",
+    kind: "Social app on Postgres",
+    summary:
+      "A social feed and chat client with a real database behind it: public reading, an account gate on every write, and the gate enforced by row-level security rather than by the interface.",
+    year: "2026",
+    stack: ["Next.js", "Supabase", "Postgres", "Server Actions"],
+    accent: "#2563eb",
+    brief:
+      "The design came out of Figma Make as a single-file React prototype — a feed and a messages tab switching on component state, every post hard-coded. The ask was to make it real: give it a database, let people sign in, and let what they write persist.",
+    challenge:
+      "Everything interesting about a social app is an authorisation question, and authorisation written in the interface is decoration. Hiding a Messages tab from a signed-out visitor means nothing if the data was already fetched into the page. The demo also had to survive being cloned without any credentials at all, and had to be safe to leave unattended on a public portfolio.",
+    approach: [
+      "Model it in Postgres — profiles, posts, comments, likes and lobby messages — with the seeded cast decoupled from auth.users, so fixtures do not need fake accounts and deleting a real user does not disturb them.",
+      "Put the access rules in row-level security, not the UI. The feed is world-readable, writes require an account and are checked against the caller's own profile, and the lobby refuses to send a single row to an anonymous session — so the login gate is true rather than cosmetic.",
+      "Route every write through a Server Action, so the session cookie stays httpOnly and the browser never holds a token to leak. The client sends intent; the database resolves who is asking.",
+      "Rate-limit inserts with a trigger rather than a policy, because a policy can only say no while a trigger can return a message worth showing, and expire everything a visitor writes after 24 hours so the demo cleans itself.",
+      "Render the public feed on the server with a short revalidate, then subscribe to realtime for anything newer — a crawler and a no-JavaScript reader get the whole feed, and the socket only adds freshness.",
+      "Fall back to seed content when no Supabase project is configured, so the site still builds, still prerenders and still demonstrates the UI for anyone who clones it — and says plainly that it is read-only rather than pretending.",
+    ],
+    outcome: [
+      {
+        label: "Auth rules in the UI",
+        value: "0",
+        note: "the gate is a database policy",
+      },
+      {
+        label: "Tokens in the browser",
+        value: "0",
+        note: "httpOnly cookie, writes via Server Actions",
+      },
+      {
+        label: "Visitor content retained",
+        value: "24h",
+        note: "expires itself, so it needs no moderation",
       },
     ],
   },

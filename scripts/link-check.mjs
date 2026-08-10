@@ -33,6 +33,9 @@ const strict = [
   "/work/usa-equipment/equipment",
   "/work/usa-equipment/equipment/LT-2214",
   "/work/usa-equipment/quote",
+  "/work/talkapo",
+  "/work/talkapo/messages",
+  "/work/talkapo/login",
 ];
 
 /**

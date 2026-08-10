@@ -21,17 +21,17 @@ npm run dev          # http://localhost:3000
 
 ## Scripts
 
-| Command                         | What it does                                           |
-| ------------------------------- | ------------------------------------------------------ |
-| `npm run dev`                   | Dev server with Turbopack and hot reload               |
-| `npm run build`                 | Production build (all routes prerender to static HTML) |
-| `npm start`                     | Serve the production build                             |
-| `npm run lint`                  | ESLint with the Next.js config                         |
-| `npm run typecheck`             | TypeScript with no emit                                |
-| `npm run format`                | Prettier, including Tailwind class sorting             |
-| `npm run shots`                 | Visual smoke test — see below                          |
-| `npm run test:demos`            | Interaction test — drives the demos for real           |
-| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible       |
+| Command                         | What it does                                                                     |
+| ------------------------------- | -------------------------------------------------------------------------------- |
+| `npm run dev`                   | Dev server with Turbopack and hot reload                                         |
+| `npm run build`                 | Production build (every route prerenders except Talkapo's two signed-in screens) |
+| `npm start`                     | Serve the production build                                                       |
+| `npm run lint`                  | ESLint with the Next.js config                                                   |
+| `npm run typecheck`             | TypeScript with no emit                                                          |
+| `npm run format`                | Prettier, including Tailwind class sorting                                       |
+| `npm run shots`                 | Visual smoke test — see below                                                    |
+| `npm run test:demos`            | Interaction test — drives the demos for real                                     |
+| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible                                 |
 
 ### Visual smoke test
 
@@ -133,6 +133,7 @@ src/
     work/            the demo sites — no portfolio chrome, own identity each
       lumen-cafe/    local-business marketing site
       usa-equipment/ equipment yard: fleet, unit pages, quote list
+      talkapo/       social feed + chat, on Supabase Postgres
       nimbus/        SaaS landing page with interactive pricing
       atlas/         analytics dashboard, charts hand-built in SVG
       verde/         storefront with live filtering and a cart
@@ -160,6 +161,10 @@ and rebuilt here — see [its own section below](#lumen-café).
 **USA Equipment Co. is a rental-and-sales yard.** It came out of an AI design
 tool as a single HTML prototype and was rebuilt here as real routes — see
 [its own section below](#usa-equipment-co).
+
+**Talkapo is the one demo with a real database.** A social feed and chat client
+on Supabase, where the login gate is a row-level security policy rather than a
+hidden tab — see [its own section below](#talkapo).
 
 The other three still reproduce a layout clients recognise — a theme with a
 pricing plugin, a wp-admin plugin screen, and a WooCommerce shop archive — but
@@ -317,6 +322,61 @@ number against the fleet rather than trusting what the browser sent — there is
 no total to protect the way a checkout has, but the browser still does not get
 to describe the yard's inventory back to it.
 
+### Talkapo
+
+The only demo with a database. A social feed and a shared chat room on Supabase
+Postgres, rebuilt from a Figma Make export that had four screens switching on
+component state and every post hard-coded.
+
+Setup is five minutes and documented in
+[`supabase/README.md`](supabase/README.md). **Skip it and nothing breaks** — the
+site still builds and deploys, and Talkapo runs read-only on seed content with a
+banner saying so. That fallback is not a test fixture; it is what stops a
+portfolio from showing an error page to anyone who clones it without an account.
+
+**The login gate is a database policy, not a hidden tab.** This is the whole
+point of the demo. The feed is world-readable, so a signed-out visitor and a
+crawler both get the complete list server-rendered. Writing anything needs an
+account. And `talkapo_lobby_messages` refuses to return a single row to an
+anonymous session — so the Messages screen is not a UI hiding content it has
+already fetched, there is genuinely nothing loaded. You can prove it from the
+SQL editor:
+
+```sql
+set local role anon;
+select count(*) from public.talkapo_lobby_messages;  -- 0
+```
+
+Every rule lives in [`supabase/migrations/0001_talkapo.sql`](supabase/migrations/0001_talkapo.sql),
+which is the file to read if you want to know what the app can actually do.
+
+**No token ever reaches the browser.** Every write is a Server Action, so the
+session stays in an httpOnly cookie the page cannot read, and XSS on this demo
+would not yield a session. The client sends intent — "like this post" — and the
+database resolves who is asking from the cookie. The one thing the browser talks
+to directly is the realtime socket, which is read-only by nature and still
+subject to the same policies.
+
+**It cleans itself.** Anything a visitor writes carries a 24-hour `expires_at`
+and stops being readable the moment it lapses, because the read policies filter
+on it. Seed rows never expire, so the feed is never empty. Inserts are
+rate-limited by a trigger rather than a policy — a policy can only say no, while
+a trigger can return a message worth showing the person who tripped it. Together
+that is what makes a publicly writable feed safe to leave unattended on a
+portfolio.
+
+**Two routes are not static**, and they cannot be: `/messages` and `/login` are
+per-session. The feed is static with a 30-second revalidate, and anything newer
+arrives over the socket.
+
+Two departures from the mockup worth knowing about. The avatars are drawn from a
+hash of the handle rather than hotlinked from Unsplash — the originals were
+photographs of real people standing in for fictional ones, cost a third-party
+request each, and would have left every real signup looking like a placeholder
+next to the seeded cast. And the private 1:1 inbox became one public lobby,
+because the first visitor to a DM demo has nobody to message and sees an empty
+room.
+
 ## Notes on some deliberate choices
 
 **Theme.** A small script in `<head>` stamps `data-theme` on `<html>` before
@@ -363,9 +423,16 @@ accepting npm's suggestion to downgrade Next.js to 9.3.3.
 
 ## Deploying
 
-The whole site prerenders to static HTML, so any static host works. On Vercel:
+Everything prerenders to static HTML except two routes: Talkapo's `/messages`
+and `/login`, which are per-session and so render on request. The feed itself is
+static with a 30-second revalidate. If you drop Talkapo, the whole site is
+static again and any static host works. On Vercel:
 
 ```bash
 npm i -g vercel
 vercel
 ```
+
+Talkapo needs two environment variables to go live — see
+[`supabase/README.md`](supabase/README.md). Without them the site still builds
+and deploys; that demo runs read-only on seed content and says so on the page.
