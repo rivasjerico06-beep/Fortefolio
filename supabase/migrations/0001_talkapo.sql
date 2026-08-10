@@ -366,7 +366,7 @@ insert into public.talkapo_lobby_messages (id, author_id, content, created_at, e
    now() - interval '18 minutes', null),
   ('b3333333-3333-4333-8333-333333333333',
    '44444444-4444-4444-8444-444444444444',
-   "Oh wow, I can't wait to see it. Are you using the dark mode?",
+   'Oh wow, I can''t wait to see it. Are you using the dark mode?',
    now() - interval '17 minutes', null),
   ('b4444444-4444-4444-8444-444444444444',
    '22222222-2222-4222-8222-222222222222',
