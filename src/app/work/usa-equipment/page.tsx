@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Phone, Search } from "lucide-react";
-import { BASE, BRANDS, CATEGORIES, UNITS, YARD, getStatusCounts, getUnits } from "./data";
+import {
+  BASE,
+  BRANDS,
+  CATEGORIES,
+  PHOTOS,
+  UNITS,
+  YARD,
+  getStatusCounts,
+  getUnits,
+} from "./data";
 import { Kicker, PhotoSlot, UnitCard } from "./parts";
 
 export const metadata: Metadata = {
@@ -177,7 +186,15 @@ export default async function UsaEquipmentHome() {
         </div>
 
         <div className="relative min-h-[27.5rem] flex-[1_1_26rem] border-l border-[var(--ue-line)]">
-          <PhotoSlot label="Yard photo — 3:2" className="absolute inset-0" />
+          {/* The only image on the page that preloads — it is the LCP element.
+              Everything else lazy-loads on approach. */}
+          <PhotoSlot
+            photo={PHOTOS.yard}
+            label="Yard photo — 3:2"
+            className="absolute inset-0"
+            sizes="(max-width: 900px) 100vw, 50vw"
+            priority
+          />
           <span
             aria-hidden
             className="ue-hazard ue-hazard-live absolute inset-y-0 left-0 w-2.5"

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { Check } from "lucide-react";
-import { BASE, YARD } from "../data";
+import { BASE, YARD, photoFor } from "../data";
 import { PhotoSlot } from "../parts";
 import { QtyStepper } from "../quote-ui";
 import {
@@ -166,8 +166,10 @@ export function QuoteWizard() {
                   className="flex flex-wrap items-center gap-4 border-b border-[var(--ue-line)] p-4"
                 >
                   <PhotoSlot
+                    photo={photoFor(row.unit)}
                     label="Photo"
                     className="size-22 shrink-0 border border-[var(--ue-line)]"
+                    sizes="88px"
                   />
                   <div className="min-w-[10rem] flex-1">
                     <p className="ue-display text-[17px] leading-tight">{row.unit.name}</p>

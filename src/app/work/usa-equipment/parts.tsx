@@ -1,36 +1,67 @@
+import Image from "next/image";
 import Link from "next/link";
-import { BASE, STATUS, statusLabel, type Unit } from "./data";
+import { cn } from "@/lib/utils";
+import { BASE, STATUS, photoFor, statusLabel, type PhotoKey, type Unit } from "./data";
+import { PHOTOS } from "./data";
 import { AddToQuote } from "./quote-ui";
 
 /**
- * The frame where a yard photograph goes.
+ * The frame a yard photograph sits in.
  *
- * The yard has not sent photography yet, so rather than dress the demo in
- * stock images of somebody else's machines, the slot renders as what it is: a
- * measured, labelled space at the right aspect ratio, holding its own box so
- * nothing reflows on the day real files drop in. The label names the shot the
- * slot is waiting for.
+ * With a `photo` it renders the picture; without one it renders as what it is —
+ * a measured, labelled space at the right aspect ratio. Both hold the same box,
+ * so a card with a photograph and a card still waiting for one are the same
+ * size and the grid never reflows between them.
+ *
+ * `sizes` is required whenever the image is not full-bleed, so a phone
+ * downloads a phone-sized file rather than the desktop one.
  */
 export function PhotoSlot({
+  photo,
   label,
   tag,
   className = "",
+  sizes,
+  priority,
 }: {
+  photo?: { src: import("next/image").StaticImageData; alt: string };
   label: string;
   tag?: string;
   className?: string;
+  sizes?: string;
+  priority?: boolean;
 }) {
   return (
     <div
-      className={`relative overflow-hidden bg-[var(--ue-surface-alt)] ${className}`}
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(45deg, transparent 0 9px, rgba(22,25,28,0.045) 9px 18px)",
-      }}
+      // `cn` rather than template interpolation: the hero passes
+      // `absolute inset-0`, which has to beat the `relative` below instead of
+      // fighting it. Concatenating leaves both on the element and whichever
+      // Tailwind emitted last wins — which collapsed the hero box to nothing.
+      className={cn("relative overflow-hidden bg-[var(--ue-surface-alt)]", className)}
+      style={
+        photo
+          ? undefined
+          : {
+              backgroundImage:
+                "repeating-linear-gradient(45deg, transparent 0 9px, rgba(22,25,28,0.045) 9px 18px)",
+            }
+      }
     >
-      <span className="ue-mono absolute inset-0 flex items-center justify-center px-3 text-center text-[10px] leading-snug text-[var(--ue-ink-3)]">
-        {label}
-      </span>
+      {photo ? (
+        <Image
+          src={photo.src}
+          alt={photo.alt}
+          fill
+          sizes={sizes ?? "100vw"}
+          placeholder="blur"
+          priority={priority}
+          className="object-cover"
+        />
+      ) : (
+        <span className="ue-mono absolute inset-0 flex items-center justify-center px-3 text-center text-[10px] leading-snug text-[var(--ue-ink-3)]">
+          {label}
+        </span>
+      )}
       {tag ? (
         <span className="ue-mono absolute top-0 right-0 bg-[var(--ue-ink)] px-2.5 py-1.5 text-[11px] tracking-[0.1em] text-[var(--ue-yellow)]">
           {tag}
@@ -38,6 +69,11 @@ export function PhotoSlot({
       ) : null}
     </div>
   );
+}
+
+/** Convenience for the places that render a named photograph directly. */
+export function photo(key: PhotoKey) {
+  return PHOTOS[key];
 }
 
 /** The bordered status pill — a colour, a label, and never colour alone. */
@@ -132,9 +168,11 @@ export function UnitCard({
         <CornerMarks />
 
         <PhotoSlot
+          photo={photoFor(unit)}
           label={`Photo — ${unit.category}`}
           tag={unit.id}
           className="mb-4 aspect-3/2 border border-[var(--ue-line)]"
+          sizes="(max-width: 640px) 90vw, (max-width: 1280px) 45vw, 300px"
         />
 
         <StatusBadge unit={unit} />

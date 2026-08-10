@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BASE, STATUS, UNITS, YARD, getRelated, getUnit, statusLabel } from "../../data";
+import {
+  BASE,
+  STATUS,
+  UNITS,
+  YARD,
+  getRelated,
+  getUnit,
+  photoFor,
+  statusLabel,
+} from "../../data";
 import { Breadcrumb, PhotoSlot, StatusBadge } from "../../parts";
 import { AddToQuote } from "../../quote-ui";
 
@@ -51,23 +60,24 @@ export default async function UnitPage({ params }: Params) {
       />
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] items-start gap-6 sm:gap-10 lg:gap-14">
-        {/* Gallery ------------------------------------------------------- */}
+        {/* Gallery --------------------------------------------------------
+            One photograph, no thumbnail strip. The yard has a single picture
+            per machine type, and a four-up strip of the same image repeated is
+            worse than no strip at all. */}
         <div>
           <PhotoSlot
+            photo={photoFor(unit)}
             label={`Photo — ${unit.category}, 3:2`}
             tag={unit.id}
-            className="mb-3 aspect-3/2 border-2 border-[var(--ue-ink)]"
+            className="aspect-3/2 border-2 border-[var(--ue-ink)]"
+            sizes="(max-width: 1024px) 92vw, 560px"
+            priority
           />
-          <ul className="grid grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((n) => (
-              <li key={n}>
-                <PhotoSlot
-                  label={`Thumb ${n}`}
-                  className="aspect-square border border-[var(--ue-line)]"
-                />
-              </li>
-            ))}
-          </ul>
+          <p className="ue-mono mt-3 text-[11px] text-[var(--ue-ink-3)]">
+            {photoFor(unit)
+              ? "Stock photograph of the machine type — not this unit"
+              : "Photograph of this machine type still to come"}
+          </p>
         </div>
 
         {/* Summary ------------------------------------------------------- */}
@@ -237,8 +247,10 @@ export default async function UnitPage({ params }: Params) {
             <li key={item.id}>
               <article className="flex h-full items-center gap-4 border-2 border-[var(--ue-ink)] bg-white p-4 transition-[transform,box-shadow] duration-150 hover:-translate-y-[3px] hover:shadow-[0_4px_0_0_var(--ue-ink)]">
                 <PhotoSlot
+                  photo={photoFor(item)}
                   label="Photo"
                   className="size-26 shrink-0 border border-[var(--ue-line)]"
+                  sizes="104px"
                 />
                 <div className="min-w-0">
                   <p className="mb-1.5 flex items-center gap-1.5">

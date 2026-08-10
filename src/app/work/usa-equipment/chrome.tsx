@@ -350,7 +350,10 @@ export function UsaFooter() {
 
       <div className="ue-mono flex flex-wrap justify-between gap-4 border-t border-white/15 px-4 py-5 text-[11px] text-[var(--ue-on-navy-2)] sm:px-[5.5vw] xl:px-20">
         <span>© {YARD.name} · Magnolia, Texas — a portfolio demo, not a real yard</span>
-        <span>⚠ Rates and photos shown are placeholder data</span>
+        {/* Two different claims, kept separate on purpose: the rates are absent
+            entirely, while the photographs are real but of the machine type
+            rather than the unit. Credits in media/ATTRIBUTION.md. */}
+        <span>⚠ Rates are placeholders · photos show the machine type, not the unit</span>
       </div>
     </footer>
   );

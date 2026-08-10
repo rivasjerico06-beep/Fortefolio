@@ -13,9 +13,93 @@
  * footer says the same thing.
  */
 
+import type { StaticImageData } from "next/image";
+import airCompressor from "./media/air-compressor.jpg";
+import airCompressor2 from "./media/air-compressor-2.jpg";
+import boomLift from "./media/boom-lift.jpg";
+import generator from "./media/generator.jpg";
+import lightTower from "./media/light-tower.jpg";
+import lightTower2 from "./media/light-tower-2.jpg";
+import plateCompactor from "./media/plate-compactor.jpg";
+import pressureWasher from "./media/pressure-washer.jpg";
+import pump from "./media/pump.jpg";
+import rammer from "./media/rammer.jpg";
+import roller from "./media/roller.jpg";
+import yardPhoto from "./media/yard.jpg";
+
 /** Route root. Lives here rather than in the chrome so a client module can
     reach it without pulling the whole header in with it. */
 export const BASE = "/work/usa-equipment";
+
+/**
+ * The yard's photography.
+ *
+ * Self-hosted, not hotlinked — same reasoning as the Lumen media folder: the
+ * demo makes no third-party request, it still works with no network, and a
+ * static `import` hands Next the file's real dimensions at build time, which is
+ * what lets `next/image` reserve the right box and generate a blur placeholder
+ * so nothing shifts as the page loads.
+ *
+ * The alt text lives beside each import, so it is hard to swap a picture and
+ * forget to change its description. Each one describes **what is in the
+ * photograph**, not what the unit record claims — these are stand-ins of the
+ * right machine type, not portraits of the yard's own units, and the footer
+ * says so.
+ *
+ * Sources and licences: `media/ATTRIBUTION.md`.
+ */
+export const PHOTOS = {
+  yard: {
+    src: yardPhoto,
+    alt: "Construction machines lined up behind a fence in an equipment dealer's yard.",
+  },
+  "light-tower": {
+    src: lightTower,
+    alt: "A towable light tower with its mast raised beside earthworks on a riverbank site.",
+  },
+  "light-tower-2": {
+    src: lightTower2,
+    alt: "A trailer-mounted mobile light tower parked behind traffic cones.",
+  },
+  generator: {
+    src: generator,
+    alt: "An enclosed Kohler diesel generator set standing on a concrete pad.",
+  },
+  roller: {
+    src: roller,
+    alt: "A yellow Bomag tandem roller parked on a cobbled street.",
+  },
+  "plate-compactor": {
+    src: plateCompactor,
+    alt: "A Bomag reversible vibratory plate compactor working over broken ground.",
+  },
+  rammer: {
+    src: rammer,
+    alt: "An Ammann tamping rammer standing upright on gravel.",
+  },
+  "pressure-washer": {
+    src: pressureWasher,
+    alt: "A red Sealey pressure washer against a white wall.",
+  },
+  pump: {
+    src: pump,
+    alt: "A trailer-mounted engine-driven dewatering pump with suction hoses.",
+  },
+  "boom-lift": {
+    src: boomLift,
+    alt: "A blue Genie articulating boom lift with its basket raised in a car park.",
+  },
+  "air-compressor": {
+    src: airCompressor,
+    alt: "A yellow Atlas Copco towable air compressor on a drawbar trailer.",
+  },
+  "air-compressor-2": {
+    src: airCompressor2,
+    alt: "A green Irmer + Elze towable air compressor parked at the roadside.",
+  },
+} as const satisfies Record<string, { src: StaticImageData; alt: string }>;
+
+export type PhotoKey = keyof typeof PHOTOS;
 
 export type StatusKey = "in-yard" | "on-rent" | "inbound";
 
@@ -41,8 +125,36 @@ export type Unit = {
   status: StatusKey;
   /** How many of this unit the yard holds, when it holds more than one. */
   count?: number;
+  /**
+   * Overrides the category's stock photograph. `null` means the yard has no
+   * usable picture of this machine type yet — the card falls back to a
+   * labelled slot rather than borrowing a photo of something it is not.
+   */
+  photo?: PhotoKey | null;
   specs: readonly { k: string; v: string }[];
 };
+
+/**
+ * Photography is filed by machine type, not by unit — the yard has one good
+ * picture of a light tower, not four. A unit can override it or opt out.
+ * Compaction is deliberately absent: a roller, a plate and a rammer are three
+ * different machines, so each of those units names its own.
+ */
+const CATEGORY_PHOTO: Partial<Record<string, PhotoKey>> = {
+  "Light Towers": "light-tower",
+  Generators: "generator",
+  "Pressure Washers": "pressure-washer",
+  Pumps: "pump",
+  "Lift Equipment": "boom-lift",
+  "Air Compressors": "air-compressor",
+};
+
+/** The photograph to show for a unit, or undefined if there isn't one. */
+export function photoFor(unit: Unit) {
+  if (unit.photo === null) return undefined;
+  const key = unit.photo ?? CATEGORY_PHOTO[unit.category];
+  return key ? PHOTOS[key] : undefined;
+}
 
 export const UNITS: readonly Unit[] = [
   /* Light towers ---------------------------------------------------------- */
@@ -68,6 +180,7 @@ export const UNITS: readonly Unit[] = [
     category: "Light Towers",
     sub: "Light tower · 30 ft mast",
     status: "in-yard",
+    photo: "light-tower-2",
     specs: [
       { k: "Engine", v: "Kubota diesel" },
       { k: "Output", v: "6 kW" },
@@ -168,6 +281,7 @@ export const UNITS: readonly Unit[] = [
     category: "Compaction",
     sub: "Reclaimer / mixer",
     status: "in-yard",
+    photo: null, // no picture of a reclaimer in the library yet
     count: 2,
     specs: [
       { k: "Engine", v: "Deutz diesel" },
@@ -184,6 +298,7 @@ export const UNITS: readonly Unit[] = [
     category: "Compaction",
     sub: "Tandem roller · 47 in drum",
     status: "in-yard",
+    photo: "roller",
     specs: [
       { k: "Engine", v: "Kubota diesel" },
       { k: "Drum width", v: "47 in" },
@@ -199,6 +314,7 @@ export const UNITS: readonly Unit[] = [
     category: "Compaction",
     sub: "Reversible plate · 21 in",
     status: "in-yard",
+    photo: "plate-compactor",
     specs: [
       { k: "Engine", v: "Hatz diesel" },
       { k: "Working width", v: "21 in" },
@@ -214,6 +330,7 @@ export const UNITS: readonly Unit[] = [
     category: "Compaction",
     sub: "Jumping jack · 11 in shoe",
     status: "on-rent",
+    photo: "rammer",
     specs: [
       { k: "Engine", v: "Honda gas" },
       { k: "Shoe width", v: "11 in" },
@@ -261,6 +378,7 @@ export const UNITS: readonly Unit[] = [
     category: "Pressure Washers",
     sub: "Surface cleaner attachment",
     status: "in-yard",
+    photo: null, // an attachment, not a machine — nothing to show
     specs: [
       { k: "Type", v: "Attachment" },
       { k: "Cleaning width", v: "24 in" },
@@ -388,6 +506,7 @@ export const UNITS: readonly Unit[] = [
     category: "Air Compressors",
     sub: "Towable compressor · 400 CFM",
     status: "in-yard",
+    photo: "air-compressor-2",
     specs: [
       { k: "Engine", v: "Isuzu diesel" },
       { k: "Output", v: "400 CFM" },
@@ -406,6 +525,7 @@ export const UNITS: readonly Unit[] = [
     category: "Mixers",
     sub: "Concrete mixer · towable",
     status: "on-rent",
+    photo: null,
     specs: [
       { k: "Engine", v: "Honda gas" },
       { k: "Drum capacity", v: "9 cu ft" },
@@ -420,6 +540,7 @@ export const UNITS: readonly Unit[] = [
     category: "Mixers",
     sub: "Flex-shaft vibrator · 2 in head",
     status: "on-rent",
+    photo: null,
     specs: [
       { k: "Power", v: "Electric, 115 V" },
       { k: "Head diameter", v: "2 in" },

@@ -58,6 +58,34 @@ const problems = [];
  * fault, so retry once from the top of the page; if it fails twice, record it
  * and carry on so the rest of the routes still get checked.
  */
+/**
+ * Walk the page once so `loading="lazy"` images start, then return to the top.
+ *
+ * A full-page capture photographs the whole document without ever scrolling it,
+ * so anything below the fold is still an unloaded blur placeholder at the
+ * moment the shutter falls. That is a harness artefact rather than a page
+ * fault — but it makes the screenshots lie about pages carrying real
+ * photography, which is most of the point of taking them.
+ */
+async function warmLazyImages(page) {
+  await page.evaluate(async () => {
+    const step = Math.round(window.innerHeight * 0.8);
+    for (let y = 0; y < document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 120));
+    }
+    window.scrollTo(0, 0);
+  });
+
+  // `complete` also goes true for images that failed, which is what we want:
+  // a broken image should not hold the run up, it should be visible in the shot.
+  await page
+    .waitForFunction(() => [...document.images].every((img) => img.complete), null, {
+      timeout: 10_000,
+    })
+    .catch(() => {});
+}
+
 async function capture(page, path) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
@@ -89,6 +117,7 @@ for (const [name, path] of routes) {
   const res = await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
   if (!res || res.status() !== 200) problems.push(`${path} returned HTTP ${res?.status()}`);
 
+  await warmLazyImages(page);
   await capture(page, `${OUT}/${name}.png`);
   await ctx.close();
 
@@ -115,7 +144,10 @@ for (const [name, path] of routes) {
     if (overflow > 1)
       problems.push(`${path} scrolls horizontally at ${width}px (${overflow}px)`);
 
-    if (width === 390) await capture(mobile, `${OUT}/${name}-mobile.png`);
+    if (width === 390) {
+      await warmLazyImages(mobile);
+      await capture(mobile, `${OUT}/${name}-mobile.png`);
+    }
     await mobileCtx.close();
   }
 }
