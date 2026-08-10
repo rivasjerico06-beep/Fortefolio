@@ -38,11 +38,21 @@ export type Comment = {
   createdAt: string;
 };
 
-export type LobbyMessage = {
+/** A message inside a private thread. `fromMe` decides which side it sits on. */
+export type DirectMessage = {
   id: string;
-  author: Profile;
   content: string;
   createdAt: string;
+  fromMe: boolean;
+};
+
+/** A row in the inbox. `other` is the one member who is not you. */
+export type Conversation = {
+  id: string;
+  other: Profile;
+  lastMessage: string | null;
+  lastAt: string | null;
+  lastFromMe: boolean;
 };
 
 /** True when a real project is wired up and reachable from this render. */
@@ -137,36 +147,28 @@ const SEED_COMMENTS: Record<string, Comment[]> = {
   ],
 };
 
-const SEED_LOBBY: LobbyMessage[] = [
-  {
-    id: "b1111111-1111-4111-8111-111111111111",
-    author: SEED_PROFILES.sarah,
-    content: "Hey Alex! How is the new project going?",
-    createdAt: hoursAgo(0.33),
-  },
-  {
-    id: "b2222222-2222-4222-8222-222222222222",
-    author: SEED_PROFILES.alex,
-    content: "Going great! Just wrapping up the new messaging UI. It looks super sleek.",
-    createdAt: hoursAgo(0.3),
-  },
-  {
-    id: "b3333333-3333-4333-8333-333333333333",
-    author: SEED_PROFILES.sarah,
-    content: "Oh wow, I can't wait to see it. Are you using the dark mode?",
-    createdAt: hoursAgo(0.28),
-  },
-  {
-    id: "b4444444-4444-4444-8444-444444444444",
-    author: SEED_PROFILES.alex,
-    content: "Yes! Completely dark mode with some glassmorphism effects.",
-    createdAt: hoursAgo(0.25),
-  },
-];
-
 /* Shapes coming back from PostgREST ---------------------------------------- */
 
 type ProfileRow = { id: string; handle: string; display_name: string };
+
+type MemberRow = { talkapo_profiles: ProfileRow | ProfileRow[] | null };
+
+type ConversationRow = {
+  talkapo_conversations:
+    | {
+        id: string;
+        talkapo_conversation_members: MemberRow[] | null;
+        talkapo_direct_messages:
+          { id: string; content: string; created_at: string; author_id: string }[] | null;
+      }
+    | {
+        id: string;
+        talkapo_conversation_members: MemberRow[] | null;
+        talkapo_direct_messages:
+          { id: string; content: string; created_at: string; author_id: string }[] | null;
+      }[]
+    | null;
+};
 
 type PostRow = {
   id: string;
@@ -299,39 +301,147 @@ export async function getComments(postId: string): Promise<Comment[]> {
   }));
 }
 
-/**
- * The lobby. Returns null for a signed-out visitor rather than an empty list —
- * "you cannot see this" and "there is nothing here" are different states and
- * the UI shows different things for them.
+/* Private messages ---------------------------------------------------------
  *
- * The check is a courtesy. The real gate is the RLS policy, which refuses the
- * select outright for an anonymous session.
+ * Every read below returns null for a signed-out visitor rather than an empty
+ * list, because "you cannot see this" and "there is nothing here" are different
+ * states and the UI says different things for them.
+ *
+ * None of these checks are the security boundary. A conversation, its
+ * membership and its messages are visible only to their two members, enforced
+ * by policy — an anonymous or uninvited caller gets nothing back from Postgres
+ * whatever this code does.
  */
-export async function getLobby(): Promise<LobbyMessage[] | null> {
+
+/** One row in the inbox: who it is with, and the last thing said. */
+export async function getConversations(): Promise<Conversation[] | null> {
   const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const me = await getMyProfile();
   if (!me) return null;
 
+  // Only conversations I am in come back at all, so there is nothing to filter.
   const { data, error } = await supabase
-    .from("talkapo_lobby_messages")
-    .select("id, content, created_at, talkapo_profiles!inner(id, handle, display_name)")
-    .order("created_at", { ascending: true })
-    .limit(100);
+    .from("talkapo_conversation_members")
+    .select(
+      `conversation_id,
+       talkapo_conversations!inner(
+         id,
+         talkapo_conversation_members(talkapo_profiles(id, handle, display_name)),
+         talkapo_direct_messages(id, content, created_at, author_id)
+       )`,
+    )
+    .eq("profile_id", me.id);
 
   if (error) {
-    reportQueryFailure("lobby", error);
-    return SEED_LOBBY;
+    reportQueryFailure("conversations", error);
+    return [];
   }
-  if (!data) return SEED_LOBBY;
+  if (!data) return [];
 
-  return data.map((row) => ({
-    id: row.id as string,
-    author: toProfile(one(row.talkapo_profiles as ProfileRow | ProfileRow[] | null)),
-    content: row.content as string,
-    createdAt: row.created_at as string,
-  }));
+  const rows = data as unknown as ConversationRow[];
+
+  return rows
+    .map((row): Conversation | null => {
+      const conversation = one(row.talkapo_conversations);
+      if (!conversation) return null;
+
+      // A 1:1 thread has exactly one member who is not me
+      const other = (conversation.talkapo_conversation_members ?? [])
+        .map((member) => toProfile(one(member.talkapo_profiles)))
+        .find((profile) => profile.id !== me.id);
+      if (!other) return null;
+
+      const messages = [...(conversation.talkapo_direct_messages ?? [])].sort(
+        (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
+      );
+      const latest = messages[0];
+
+      return {
+        id: conversation.id,
+        other,
+        lastMessage: latest?.content ?? null,
+        lastAt: latest?.created_at ?? null,
+        lastFromMe: latest ? latest.author_id === me.id : false,
+      };
+    })
+    .filter((row): row is Conversation => row !== null)
+    .sort((a, b) => Date.parse(b.lastAt ?? "0") - Date.parse(a.lastAt ?? "0"));
+}
+
+/** A single thread, or null if it does not exist or is not yours. */
+export async function getConversation(
+  id: string,
+): Promise<{ other: Profile; messages: DirectMessage[] } | null> {
+  const supabase = await supabaseServer();
+  if (!supabase) return null;
+
+  const me = await getMyProfile();
+  if (!me) return null;
+
+  const { data: members, error: membersError } = await supabase
+    .from("talkapo_conversation_members")
+    .select("profile_id, talkapo_profiles(id, handle, display_name)")
+    .eq("conversation_id", id);
+
+  if (membersError) {
+    reportQueryFailure("conversation members", membersError);
+    return null;
+  }
+
+  // Empty means the policy refused it — someone else's thread, or no such id.
+  if (!members || members.length === 0) return null;
+
+  const rows = members as unknown as MemberRow[];
+  const other = rows
+    .map((member) => toProfile(one(member.talkapo_profiles)))
+    .find((profile) => profile.id !== me.id);
+  if (!other) return null;
+
+  const { data, error } = await supabase
+    .from("talkapo_direct_messages")
+    .select("id, content, created_at, author_id")
+    .eq("conversation_id", id)
+    .order("created_at", { ascending: true })
+    .limit(200);
+
+  if (error) {
+    reportQueryFailure("direct messages", error);
+    return { other, messages: [] };
+  }
+
+  return {
+    other,
+    messages: (data ?? []).map((row) => ({
+      id: row.id as string,
+      content: row.content as string,
+      createdAt: row.created_at as string,
+      fromMe: (row.author_id as string) === me.id,
+    })),
+  };
+}
+
+/**
+ * People search, for starting a conversation.
+ *
+ * Goes through a database function rather than a filtered select so the rule
+ * "only accounts that actually exist" lives next to the data. The function
+ * excludes anything without an auth user behind it and excludes you, and is
+ * executable only by `authenticated`.
+ */
+export async function searchPeople(term: string): Promise<Profile[]> {
+  const supabase = await supabaseServer();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc("talkapo_search_people", { term });
+
+  if (error) {
+    reportQueryFailure("people search", error);
+    return [];
+  }
+
+  return (data ?? []).map((row: ProfileRow) => toProfile(row));
 }
 
 /* Presentation helpers ------------------------------------------------------ */

@@ -502,13 +502,24 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
     await page.getByText("Have an account? Log in").first().isVisible(),
   );
 
-  // The lobby is refused by the database, so the page has nothing to reveal
+  // Private conversations are refused by the database, so the page has
+  // nothing to reveal — not even the inbox list.
   await page.goto(`${TK}/messages`, { waitUntil: "networkidle" });
-  ok("messages are gated", await page.getByText("Messages are for members").isVisible());
-  const lobbyHtml = await (await page.request.get(`${TK}/messages`)).text();
+  ok("messages are gated", await page.getByText("Messages are private").isVisible());
+
+  const dmHtml = await (await page.request.get(`${TK}/messages`)).text();
   ok(
-    "no lobby content is sent to a signed-out visitor",
-    !lobbyHtml.includes("Going great! Just wrapping up"),
+    "no inbox is sent to a signed-out visitor",
+    !dmHtml.includes("Search people") && !dmHtml.includes("Pick a conversation"),
+  );
+
+  // A conversation id is guessable enough to be worth probing, so an
+  // uninvited caller must get the same answer as for one that does not exist.
+  const probe = await page.request.get(`${TK}/messages/00000000-0000-4000-8000-000000000000`);
+  ok(
+    "someone else's thread 404s rather than leaking that it exists",
+    probe.status() === 404,
+    String(probe.status()),
   );
 
   // Nav items the demo does not implement say so instead of going nowhere
