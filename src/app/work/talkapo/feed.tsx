@@ -33,18 +33,35 @@ export function Feed({ posts, me }: { posts: Post[]; me: Profile | null }) {
     const supabase = supabaseBrowser();
     if (!supabase) return;
 
-    const channel = supabase
-      .channel("talkapo-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "talkapo_posts" }, () =>
-        router.refresh(),
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "talkapo_likes" }, () =>
-        router.refresh(),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+
+    /* Hand the socket the session token *before* subscribing. The session lives
+     * in cookies and is restored asynchronously, so a channel opened on the
+     * first render connects anonymously. Posts and likes are world-readable so
+     * events would still arrive here — but the message thread does the same
+     * thing, where an anonymous socket receives nothing at all, and having the
+     * two differ is how that bug hides. */
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      await supabase.realtime.setAuth(data.session?.access_token ?? null);
+      if (cancelled) return;
+
+      channel = supabase
+        .channel("talkapo-feed")
+        .on("postgres_changes", { event: "*", schema: "public", table: "talkapo_posts" }, () =>
+          router.refresh(),
+        )
+        .on("postgres_changes", { event: "*", schema: "public", table: "talkapo_likes" }, () =>
+          router.refresh(),
+        )
+        .subscribe();
+    })();
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [router]);
 

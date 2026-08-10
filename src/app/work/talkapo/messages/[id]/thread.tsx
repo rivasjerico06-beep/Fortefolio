@@ -41,22 +41,40 @@ export function Thread({
     const supabase = supabaseBrowser();
     if (!supabase) return;
 
-    const channel = supabase
-      .channel(`talkapo-thread-${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "talkapo_direct_messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        () => router.refresh(),
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | undefined;
+    let cancelled = false;
+
+    /* Hand the socket the session token *before* subscribing.
+     *
+     * The session lives in cookies and is restored asynchronously, so a channel
+     * opened on the first render connects anonymously — and because realtime
+     * honours the same policies as everything else, an anonymous socket is
+     * filtered down to nothing. It subscribes successfully and then silently
+     * never delivers a message, which is a miserable thing to debug. */
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+      await supabase.realtime.setAuth(data.session?.access_token ?? null);
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`talkapo-thread-${conversationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "talkapo_direct_messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          () => router.refresh(),
+        )
+        .subscribe();
+    })();
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [conversationId, router]);
 
