@@ -25,15 +25,30 @@ const NOT_CONFIGURED =
   "This demo has no database attached, so it is running read-only on seed content.";
 const SIGNED_OUT = "You need an account to do that.";
 
-/** Turn a Postgres error into something worth showing a person. */
+/** Turn a Postgres or GoTrue error into something worth showing a person. */
 function readable(message: string) {
+  const lower = message.toLowerCase();
+
   if (message.includes("Slow down")) return message;
   if (message.includes("duplicate key")) return "You have already done that.";
   if (message.includes("row-level security")) return SIGNED_OUT;
-  if (message.toLowerCase().includes("invalid login")) return "Wrong email or password.";
-  if (message.toLowerCase().includes("already registered")) {
+  if (lower.includes("invalid login")) return "Wrong email or password.";
+  if (lower.includes("already registered") || lower.includes("already been registered")) {
     return "That email already has an account — log in instead.";
   }
+
+  /* The two failures a misconfigured project produces, both of which look like
+     the visitor's fault and are not. Supabase only sends a confirmation mail
+     when "Confirm email" is left on, and its built-in mailer allows a handful
+     an hour — so the third person to try a demo gets refused. Turning that
+     setting off removes both. See supabase/README.md, step 3. */
+  if (lower.includes("email rate limit") || lower.includes("over_email_send_rate_limit")) {
+    return "Sign-ups are temporarily unavailable — the demo's mail quota is used up. Try again shortly.";
+  }
+  if (lower.includes("is invalid") && lower.includes("email")) {
+    return "That email address was rejected. Try a different one.";
+  }
+
   return message;
 }
 
