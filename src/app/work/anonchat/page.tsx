@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { getFeed, getMyProfile, isLive } from "./data";
+import { getFeed, getMyExpiry, getMyProfile, isLive } from "./data";
 import { Feed } from "./feed";
 import { LiveBadge, ReadOnlyNotice } from "./parts";
+import { ExpiryBadge } from "./expiry";
 
 export const metadata: Metadata = {
   title: "AnonChat — demo site",
   description:
-    "A social feed and chat client on Supabase: public reading, an account gate on every write, row-level security, and realtime updates.",
+    "A social feed and private messenger where nothing lasts a day. Posts, conversations and the account itself are deleted after 24 hours — enforced by the database, not a privacy policy.",
 };
 
 /**
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
  */
 
 export default async function AnonChatHome() {
-  const [posts, me] = await Promise.all([getFeed(), getMyProfile()]);
+  const [posts, me, expiresAt] = await Promise.all([getFeed(), getMyProfile(), getMyExpiry()]);
 
   return (
     /* The right rail is gone along with the trending panel it existed to hold.
@@ -44,11 +45,22 @@ export default async function AnonChatHome() {
         <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--ac-border)] px-4 sm:px-6">
           <h1 className="ac-display text-xl">For You</h1>
           <LiveBadge live={isLive} />
-          {/* The retention rule is the product, so it is stated on the feed
-              rather than buried in a footnote on the sign-up form. */}
-          <p className="ml-auto hidden text-xs text-[var(--ac-muted)] sm:block">
-            Everything here disappears after 24 hours
-          </p>
+
+          {/* The retention rule is the product, so it belongs on the feed
+              rather than only in a footnote on the sign-up form — and on a
+              phone especially, which is where most people will meet it.
+              Signed in, the generic rule is replaced by your own deadline;
+              the countdown is the same sentence with a number in it. */}
+          <div className="ml-auto">
+            {expiresAt ? (
+              <ExpiryBadge expiresAt={expiresAt} />
+            ) : (
+              <p className="text-xs text-[var(--ac-muted)]">
+                <span className="hidden sm:inline">Everything here disappears after </span>
+                <span className="sm:hidden">Clears in </span>24 hours
+              </p>
+            )}
+          </div>
         </header>
 
         {!isLive ? <ReadOnlyNotice /> : null}
