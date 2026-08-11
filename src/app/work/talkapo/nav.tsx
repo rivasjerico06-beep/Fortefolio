@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTransition } from "react";
-import { Bell, Home, MessageSquare, Search, Settings, Sparkles } from "lucide-react";
+import { Bell, Home, MessageSquare, Search, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BASE, type Profile } from "./data";
 import { Avatar } from "./parts";
@@ -40,15 +40,11 @@ export function TalkapoNav({ me }: { me: Profile | null }) {
       aria-label="Talkapo"
       className="z-20 flex w-[76px] shrink-0 flex-col justify-between border-r border-[var(--tk-border)] xl:w-[260px]"
     >
+      {/* No wordmark or logo lozenge up here. The nav's own Home item already
+          goes where a clickable logo would, so it was a second link to the same
+          place — and a generic sparkle standing in for a brand is decoration
+          pretending to be identity. */}
       <div className="flex flex-col gap-6 p-4 xl:p-6">
-        <Link
-          href={BASE}
-          aria-label="Talkapo home"
-          className="mb-2 flex size-12 items-center justify-center rounded-full bg-white text-black transition hover:opacity-90"
-        >
-          <Sparkles size={24} aria-hidden />
-        </Link>
-
         <ul className="flex flex-col gap-1">
           {ITEMS.map((item) => {
             const active = item.href !== null && pathname === item.href;
