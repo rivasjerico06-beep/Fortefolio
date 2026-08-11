@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { isConfigured, supabaseServer } from "./supabase";
 
 /**
@@ -221,8 +222,22 @@ function toProfile(row: ProfileRow | null): Profile {
 
 /* Reads -------------------------------------------------------------------- */
 
-/** The signed-in visitor's profile, or null when signed out or unconfigured. */
-export async function getMyProfile(): Promise<Profile | null> {
+/**
+ * The signed-in visitor's profile, or null when signed out or unconfigured.
+ *
+ * Wrapped in React's `cache`, which deduplicates it for the duration of one
+ * request. Rendering the feed asks for the profile three times — the layout
+ * needs it for the nav, the page passes it to the composer, and `getFeed`
+ * needs it to work out `likedByMe` — and each call was two more round trips to
+ * Supabase, an auth check and a select. Seven trips became three.
+ *
+ * That is worth more than it looks. Every trip is paid at the distance between
+ * the function and the database, so the cost of getting this wrong scales with
+ * how far apart they are: negligible when they share a region, and ruinous
+ * when they do not. `vercel.json` keeps them together; this keeps the number
+ * of trips down in case they ever drift apart.
+ */
+export const getMyProfile = cache(async (): Promise<Profile | null> => {
   const supabase = await supabaseServer();
   if (!supabase) return null;
 
@@ -238,7 +253,7 @@ export async function getMyProfile(): Promise<Profile | null> {
     .maybeSingle();
 
   return data ? toProfile(data) : null;
-}
+});
 
 export async function getFeed(): Promise<Post[]> {
   const supabase = await supabaseServer();
