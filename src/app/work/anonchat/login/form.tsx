@@ -40,28 +40,28 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
   }
 
   const field =
-    "w-full rounded-xl border border-[var(--tk-border)] bg-[var(--tk-secondary)] px-4 py-3 outline-none focus:border-[var(--tk-border-strong)]";
+    "w-full rounded-xl border border-[var(--ac-border)] bg-[var(--ac-secondary)] px-4 py-3 outline-none focus:border-[var(--ac-border-strong)]";
 
   return (
     <div className="w-full max-w-sm">
-      <h1 className="tk-display mb-2 text-3xl">
+      <h1 className="ac-display mb-2 text-3xl">
         {signingUp ? "Create your account" : "Welcome back"}
       </h1>
-      <p className="mb-6 text-[15px] text-[var(--tk-muted)]">
+      <p className="mb-6 text-[15px] text-[var(--ac-muted)]">
         {signingUp
-          ? "You need an account to post, like, comment and open the lobby."
-          : "Log in to post, like, comment and open the lobby."}
+          ? "You need an account to post, like, comment and send private messages."
+          : "Log in to post, like, comment and send private messages."}
       </p>
 
       <form action={submit} className="flex flex-col gap-3">
         {signingUp ? (
           <>
             <div>
-              <label htmlFor="tk-handle" className="mb-1.5 block text-sm">
+              <label htmlFor="ac-handle" className="mb-1.5 block text-sm">
                 Handle
               </label>
               <input
-                id="tk-handle"
+                id="ac-handle"
                 name="handle"
                 required
                 autoComplete="username"
@@ -70,17 +70,17 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
                 title="3–20 letters, numbers or underscores"
                 className={field}
               />
-              <p className="mt-1 text-xs text-[var(--tk-muted)]">
+              <p className="mt-1 text-xs text-[var(--ac-muted)]">
                 3–20 letters, numbers or underscores.
               </p>
             </div>
 
             <div>
-              <label htmlFor="tk-name" className="mb-1.5 block text-sm">
+              <label htmlFor="ac-name" className="mb-1.5 block text-sm">
                 Display name
               </label>
               <input
-                id="tk-name"
+                id="ac-name"
                 name="displayName"
                 autoComplete="name"
                 placeholder="Your name"
@@ -91,11 +91,11 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         ) : null}
 
         <div>
-          <label htmlFor="tk-email" className="mb-1.5 block text-sm">
+          <label htmlFor="ac-email" className="mb-1.5 block text-sm">
             Email
           </label>
           <input
-            id="tk-email"
+            id="ac-email"
             name="email"
             type="email"
             required
@@ -106,11 +106,11 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         </div>
 
         <div>
-          <label htmlFor="tk-password" className="mb-1.5 block text-sm">
+          <label htmlFor="ac-password" className="mb-1.5 block text-sm">
             Password
           </label>
           <input
-            id="tk-password"
+            id="ac-password"
             name="password"
             type="password"
             required
@@ -122,7 +122,7 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         </div>
 
         {error ? (
-          <p role="alert" className="text-sm text-[var(--tk-warn)]">
+          <p role="alert" className="text-sm text-[var(--ac-warn)]">
             {error}
           </p>
         ) : null}
@@ -136,7 +136,7 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
         </button>
       </form>
 
-      <p className="mt-5 text-sm text-[var(--tk-muted)]">
+      <p className="mt-5 text-sm text-[var(--ac-muted)]">
         {signingUp ? "Already have an account?" : "No account yet?"}{" "}
         <button
           type="button"
@@ -144,18 +144,20 @@ export function AuthForm({ initialMode }: { initialMode: "login" | "signup" }) {
             setMode(signingUp ? "login" : "signup");
             setError(null);
           }}
-          className={cn("font-semibold text-[var(--tk-fg)] underline")}
+          className={cn("font-semibold text-[var(--ac-fg)] underline")}
         >
           {signingUp ? "Log in" : "Create one"}
         </button>
       </p>
 
-      <p className="mt-6 border-t border-[var(--tk-border)] pt-5 text-xs leading-relaxed text-[var(--tk-muted)]">
-        This is a portfolio demo. Use a throwaway password — not one you use anywhere else.
-        Anything you post clears itself after 24 hours.
+      <p className="mt-6 border-t border-[var(--ac-border)] pt-5 text-xs leading-relaxed text-[var(--ac-muted)]">
+        This is a portfolio demo. Use a throwaway password — not one you use anywhere else. The
+        account itself is deleted 24 hours after you make it, along with every post, like,
+        comment and private message on it. There is nothing to log back into afterwards, and
+        nothing to delete by hand.
       </p>
 
-      <Link href={BASE} className="mt-4 inline-block text-sm text-[var(--tk-muted)] underline">
+      <Link href={BASE} className="mt-4 inline-block text-sm text-[var(--ac-muted)] underline">
         Back to the feed
       </Link>
     </div>

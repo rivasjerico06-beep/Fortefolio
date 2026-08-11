@@ -1440,7 +1440,7 @@ body {
 }
 
 /* ==========================================================================
-   Talkapo — kinetic minimal, dark only
+   AnonChat — kinetic minimal, dark only
 
    A social feed and chat client: pure black ground, white as the accent, and
    hairline borders doing the work that fills usually do. Like USA Equipment
@@ -1455,82 +1455,82 @@ body {
    they use the full muted step at 8.19:1 here.
    ========================================================================== */
 
-.talkapo {
+.anonchat {
   color-scheme: dark;
 
-  --tk-bg: #000000;
-  --tk-fg: #ffffff; /* 21:1 */
-  --tk-muted: #a1a1aa; /* 8.19:1 on the black ground */
-  --tk-card: rgba(255, 255, 255, 0.04);
-  --tk-secondary: rgba(255, 255, 255, 0.08);
-  --tk-border: rgba(255, 255, 255, 0.08);
-  --tk-border-strong: rgba(255, 255, 255, 0.18);
-  --tk-ring: rgba(255, 255, 255, 0.35);
+  --ac-bg: #000000;
+  --ac-fg: #ffffff; /* 21:1 */
+  --ac-muted: #a1a1aa; /* 8.19:1 on the black ground */
+  --ac-card: rgba(255, 255, 255, 0.04);
+  --ac-secondary: rgba(255, 255, 255, 0.08);
+  --ac-border: rgba(255, 255, 255, 0.08);
+  --ac-border-strong: rgba(255, 255, 255, 0.18);
+  --ac-ring: rgba(255, 255, 255, 0.35);
 
-  --tk-like: #f87171; /* 7.0:1 — the heart, when it is on */
-  --tk-repost: #4ade80; /* 11.4:1 */
-  --tk-live: #22c55e; /* 9.2:1 — the "connected" dot */
-  --tk-warn: #fbbf24; /* 11.6:1 — read-only and rate-limit notices */
+  --ac-like: #f87171; /* 7.0:1 — the heart, when it is on */
+  --ac-repost: #4ade80; /* 11.4:1 */
+  --ac-live: #22c55e; /* 9.2:1 — the "connected" dot */
+  --ac-warn: #fbbf24; /* 11.6:1 — read-only and rate-limit notices */
 
-  background: var(--tk-bg);
-  color: var(--tk-fg);
-  font-family: var(--font-tk-sans), "Inter", system-ui, sans-serif;
+  background: var(--ac-bg);
+  color: var(--ac-fg);
+  font-family: var(--font-ac-sans), "Inter", system-ui, sans-serif;
 }
 
-.talkapo h1,
-.talkapo h2,
-.talkapo h3,
-.talkapo .tk-display {
-  font-family: var(--font-tk-display), "Outfit", system-ui, sans-serif;
+.anonchat h1,
+.anonchat h2,
+.anonchat h3,
+.anonchat .ac-display {
+  font-family: var(--font-ac-display), "Outfit", system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.talkapo ::placeholder {
-  color: var(--tk-muted);
+.anonchat ::placeholder {
+  color: var(--ac-muted);
   opacity: 1; /* Firefox dims placeholders by default; the token is already correct */
 }
 
-.talkapo :focus-visible {
-  outline: 2px solid var(--tk-ring);
+.anonchat :focus-visible {
+  outline: 2px solid var(--ac-ring);
   outline-offset: 2px;
 }
 
-.talkapo ::selection {
+.anonchat ::selection {
   background: rgba(255, 255, 255, 0.22);
   color: #ffffff;
 }
 
 /* The viewport bar belongs to the document, so the demo's own colours cannot
    reach it through the cascade — these repeat the tokens above. */
-:root:has(.talkapo) {
+:root:has(.anonchat) {
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
 /* The hairline scroll containers inside the app: a 4px bar, as the design has */
-.tk-scroll {
+.ac-scroll {
   scrollbar-width: thin;
   overscroll-behavior: contain;
 }
-.tk-scroll::-webkit-scrollbar {
+.ac-scroll::-webkit-scrollbar {
   width: 4px;
   height: 4px;
 }
-.tk-scroll::-webkit-scrollbar-thumb {
+.ac-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
   border: 0;
   border-radius: 10px;
 }
-.tk-scroll::-webkit-scrollbar-thumb:hover {
+.ac-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
 
 /* The pulse on the realtime "live" dot. Decoration only — the word beside it
    says the same thing, so the global reduced-motion rule can stop it freely. */
-.tk-pulse {
-  animation: tk-pulse 2.4s ease-out infinite;
+.ac-pulse {
+  animation: ac-pulse 2.4s ease-out infinite;
 }
-@keyframes tk-pulse {
+@keyframes ac-pulse {
   0%,
   100% {
     box-shadow: 0 0 0 0 currentColor;
@@ -1541,10 +1541,10 @@ body {
 }
 
 /* A message or post arriving from the socket, rather than from a page load */
-.tk-arrive {
-  animation: tk-arrive 260ms cubic-bezier(0.22, 1, 0.36, 1);
+.ac-arrive {
+  animation: ac-arrive 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes tk-arrive {
+@keyframes ac-arrive {
   from {
     opacity: 0;
     transform: translate3d(0, 8px, 0);
@@ -1591,8 +1591,8 @@ body {
   .ue-toast,
   .ue-bar-up,
   .ue-menu-in,
-  .tk-pulse,
-  .tk-arrive {
+  .ac-pulse,
+  .ac-arrive {
     animation: none !important;
   }
   .lc-rule[data-reveal],

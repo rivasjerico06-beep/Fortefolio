@@ -27,7 +27,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        "tk-display inline-flex shrink-0 items-center justify-center rounded-full text-white select-none",
+        "ac-display inline-flex shrink-0 items-center justify-center rounded-full text-white select-none",
         className,
       )}
       style={{
@@ -53,11 +53,11 @@ export function LoginGate({ action, compact }: { action: string; compact?: boole
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[var(--tk-border)] bg-[var(--tk-card)]",
+        "rounded-2xl border border-[var(--ac-border)] bg-[var(--ac-card)]",
         compact ? "px-4 py-3" : "p-6 text-center",
       )}
     >
-      <p className={cn("text-[var(--tk-muted)]", compact ? "text-sm" : "text-[15px]")}>
+      <p className={cn("text-[var(--ac-muted)]", compact ? "text-sm" : "text-[15px]")}>
         {action}
       </p>
       <div className={cn("flex flex-wrap gap-2", compact ? "mt-2.5" : "mt-4 justify-center")}>
@@ -69,7 +69,7 @@ export function LoginGate({ action, compact }: { action: string; compact?: boole
         </Link>
         <Link
           href={`${BASE}/login?mode=signup`}
-          className="rounded-full border border-[var(--tk-border-strong)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--tk-secondary)]"
+          className="rounded-full border border-[var(--ac-border-strong)] px-4 py-2 text-sm font-semibold transition hover:bg-[var(--ac-secondary)]"
         >
           Create account
         </Link>
@@ -81,11 +81,11 @@ export function LoginGate({ action, compact }: { action: string; compact?: boole
 /** The banner shown when no Supabase project is attached to this deployment. */
 export function ReadOnlyNotice() {
   return (
-    <div className="flex items-start gap-3 border-b border-[var(--tk-border)] bg-[var(--tk-card)] px-6 py-3">
-      <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-[var(--tk-warn)]" />
-      <p className="text-sm text-[var(--tk-muted)]">
-        <span className="font-semibold text-[var(--tk-fg)]">Read-only.</span> No database is
-        attached to this deployment, so Talkapo is running on seed content — nothing can be
+    <div className="flex items-start gap-3 border-b border-[var(--ac-border)] bg-[var(--ac-card)] px-6 py-3">
+      <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-[var(--ac-warn)]" />
+      <p className="text-sm text-[var(--ac-muted)]">
+        <span className="font-semibold text-[var(--ac-fg)]">Read-only.</span> No database is
+        attached to this deployment, so AnonChat is running on seed content — nothing can be
         posted and there are no accounts. Point it at a Supabase project and the same UI goes
         live.
       </p>
@@ -96,12 +96,12 @@ export function ReadOnlyNotice() {
 /** "Live" / "Read-only" pill in the feed header. */
 export function LiveBadge({ live }: { live: boolean }) {
   return (
-    <span className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--tk-border)] px-3 py-1 text-xs text-[var(--tk-muted)]">
+    <span className="ml-auto inline-flex items-center gap-2 rounded-full border border-[var(--ac-border)] px-3 py-1 text-xs text-[var(--ac-muted)]">
       <span
         aria-hidden
         className={cn(
           "size-1.5 rounded-full",
-          live ? "tk-pulse bg-[var(--tk-live)] text-[var(--tk-live)]" : "bg-[var(--tk-muted)]",
+          live ? "ac-pulse bg-[var(--ac-live)] text-[var(--ac-live)]" : "bg-[var(--ac-muted)]",
         )}
       />
       {live ? "Live" : "Read-only"}

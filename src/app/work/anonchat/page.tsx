@@ -4,7 +4,7 @@ import { Feed } from "./feed";
 import { LiveBadge, ReadOnlyNotice } from "./parts";
 
 export const metadata: Metadata = {
-  title: "Talkapo — demo site",
+  title: "AnonChat — demo site",
   description:
     "A social feed and chat client on Supabase: public reading, an account gate on every write, row-level security, and realtime updates.",
 };
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
  * HTML containing the whole feed, not a client-side fetch.
  */
 
-export default async function TalkapoHome() {
+export default async function AnonChatHome() {
   const [posts, me] = await Promise.all([getFeed(), getMyProfile()]);
 
   return (
@@ -40,10 +40,15 @@ export default async function TalkapoHome() {
        column width is a readability decision, not a leftover from what used to
        sit beside it. Borders on both edges so it still reads as a column. */
     <main className="flex min-w-0 flex-1 justify-center">
-      <div className="flex w-full max-w-[600px] min-w-0 flex-col border-[var(--tk-border)] sm:border-x">
-        <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--tk-border)] px-6">
-          <h1 className="tk-display text-xl">For You</h1>
+      <div className="flex w-full max-w-[600px] min-w-0 flex-col border-[var(--ac-border)] sm:border-x">
+        <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--ac-border)] px-4 sm:px-6">
+          <h1 className="ac-display text-xl">For You</h1>
           <LiveBadge live={isLive} />
+          {/* The retention rule is the product, so it is stated on the feed
+              rather than buried in a footnote on the sign-up form. */}
+          <p className="ml-auto hidden text-xs text-[var(--ac-muted)] sm:block">
+            Everything here disappears after 24 hours
+          </p>
         </header>
 
         {!isLive ? <ReadOnlyNotice /> : null}

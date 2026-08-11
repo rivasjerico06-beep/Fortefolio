@@ -464,12 +464,12 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok("and the list is emptied afterwards", (await listed()) === 0, String(await listed()));
 }
 
-// --- Talkapo: the feed reads publicly, everything else is gated -------------
+// --- AnonChat: the feed reads publicly, everything else is gated -------------
 // These run whether or not a Supabase project is configured, because the claim
 // being tested holds in both modes: the feed is readable by a signed-out
 // visitor, and every write and the whole lobby are not.
 {
-  const TK = `${BASE}/work/talkapo`;
+  const TK = `${BASE}/work/anonchat`;
 
   await page.goto(TK, { waitUntil: "networkidle" });
 

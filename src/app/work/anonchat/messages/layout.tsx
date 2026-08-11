@@ -5,7 +5,7 @@ import { LoginGate, ReadOnlyNotice } from "../parts";
 import { Inbox } from "./inbox";
 
 export const metadata: Metadata = {
-  title: "Messages — Talkapo",
+  title: "Messages — AnonChat",
   description:
     "Private conversations between accounts, readable only by the two people in them.",
 };
@@ -23,8 +23,8 @@ export default async function MessagesLayout({ children }: { children: React.Rea
   if (!me || !conversations) {
     return (
       <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-[72px] shrink-0 items-center border-b border-[var(--tk-border)] px-6">
-          <h1 className="tk-display text-xl">Messages</h1>
+        <header className="flex h-[72px] shrink-0 items-center border-b border-[var(--ac-border)] px-6">
+          <h1 className="ac-display text-xl">Messages</h1>
         </header>
 
         {!isLive ? <ReadOnlyNotice /> : null}
@@ -36,12 +36,12 @@ export default async function MessagesLayout({ children }: { children: React.Rea
           <div className="max-w-md text-center">
             <span
               aria-hidden
-              className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full border border-[var(--tk-border)] bg-[var(--tk-card)]"
+              className="mx-auto mb-5 flex size-14 items-center justify-center rounded-full border border-[var(--ac-border)] bg-[var(--ac-card)]"
             >
-              <Lock size={22} className="text-[var(--tk-muted)]" />
+              <Lock size={22} className="text-[var(--ac-muted)]" />
             </span>
-            <h2 className="tk-display mb-2 text-2xl">Messages are private</h2>
-            <p className="mb-6 text-[15px] leading-relaxed text-[var(--tk-muted)]">
+            <h2 className="ac-display mb-2 text-2xl">Messages are private</h2>
+            <p className="mb-6 text-[15px] leading-relaxed text-[var(--ac-muted)]">
               {isLive
                 ? "Conversations here are between two accounts and nobody else — the database will not send them to a signed-out visitor. Sign in to search for someone and start one."
                 : "This deployment has no database attached, so there are no accounts and no conversations."}

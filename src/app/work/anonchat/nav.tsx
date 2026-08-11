@@ -7,6 +7,7 @@ import { Bell, Home, MessageSquare, Search, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BASE, type Profile } from "./data";
 import { Avatar } from "./parts";
+import { ExpiryBadge } from "./expiry";
 import { signOut } from "./actions";
 
 /**
@@ -31,14 +32,20 @@ const ITEMS = [
   { href: null, label: "Settings", icon: Settings, live: false },
 ] as const;
 
-export function TalkapoNav({ me }: { me: Profile | null }) {
+export function AnonChatNav({
+  me,
+  expiresAt,
+}: {
+  me: Profile | null;
+  expiresAt: string | null;
+}) {
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
 
   return (
     <nav
-      aria-label="Talkapo"
-      className="z-20 flex w-[76px] shrink-0 flex-col justify-between border-r border-[var(--tk-border)] xl:w-[260px]"
+      aria-label="AnonChat"
+      className="z-20 flex w-[76px] shrink-0 flex-col justify-between border-r border-[var(--ac-border)] xl:w-[260px]"
     >
       {/* No wordmark or logo lozenge up here. The nav's own Home item already
           goes where a clickable logo would, so it was a second link to the same
@@ -67,7 +74,7 @@ export function TalkapoNav({ me }: { me: Profile | null }) {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "flex items-center gap-4 rounded-full p-3 transition xl:px-4",
-                      active ? "font-bold" : "hover:bg-[var(--tk-secondary)]",
+                      active ? "font-bold" : "hover:bg-[var(--ac-secondary)]",
                     )}
                   >
                     {inner}
@@ -76,7 +83,7 @@ export function TalkapoNav({ me }: { me: Profile | null }) {
                   <span
                     aria-disabled="true"
                     title={`${item.label} is not part of this demo`}
-                    className="flex cursor-not-allowed items-center gap-4 rounded-full p-3 text-[var(--tk-muted)] opacity-50 xl:px-4"
+                    className="flex cursor-not-allowed items-center gap-4 rounded-full p-3 text-[var(--ac-muted)] opacity-50 xl:px-4"
                   >
                     {inner}
                   </span>
@@ -89,20 +96,30 @@ export function TalkapoNav({ me }: { me: Profile | null }) {
 
       <div className="p-3 xl:p-4">
         {me ? (
-          <div className="flex items-center gap-3 rounded-full p-2 xl:pr-3">
-            <Avatar profile={me} size={40} />
-            <div className="hidden min-w-0 flex-1 flex-col xl:flex">
-              <span className="truncate text-sm font-semibold">{me.displayName}</span>
-              <span className="truncate text-xs text-[var(--tk-muted)]">@{me.handle}</span>
+          <div className="flex flex-col gap-2">
+            {/* The countdown lives beside the identity it applies to, because
+                what expires is the account — not just what was posted from it. */}
+            {expiresAt ? (
+              <div className="hidden xl:block">
+                <ExpiryBadge expiresAt={expiresAt} />
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-3 rounded-full p-2 xl:pr-3">
+              <Avatar profile={me} size={40} />
+              <div className="hidden min-w-0 flex-1 flex-col xl:flex">
+                <span className="truncate text-sm font-semibold">{me.displayName}</span>
+                <span className="truncate text-xs text-[var(--ac-muted)]">@{me.handle}</span>
+              </div>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => startTransition(() => void signOut())}
+                className="hidden rounded-full border border-[var(--ac-border-strong)] px-3 py-1.5 text-xs transition hover:bg-[var(--ac-secondary)] disabled:opacity-50 xl:block"
+              >
+                {pending ? "…" : "Log out"}
+              </button>
             </div>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => startTransition(() => void signOut())}
-              className="hidden rounded-full border border-[var(--tk-border-strong)] px-3 py-1.5 text-xs transition hover:bg-[var(--tk-secondary)] disabled:opacity-50 xl:block"
-            >
-              {pending ? "…" : "Log out"}
-            </button>
           </div>
         ) : (
           <Link

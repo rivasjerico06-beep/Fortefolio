@@ -5,7 +5,7 @@ import { BASE } from "./data";
 import { supabaseServer } from "./supabase";
 
 /**
- * Writes for the Talkapo demo.
+ * Writes for the AnonChat demo.
  *
  * Every one of these is a Server Action rather than a client-side call to
  * Supabase, for one reason: the session cookie is httpOnly, so the browser

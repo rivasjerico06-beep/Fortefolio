@@ -21,17 +21,17 @@ npm run dev          # http://localhost:3000
 
 ## Scripts
 
-| Command                         | What it does                                                                   |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| `npm run dev`                   | Dev server with Turbopack and hot reload                                       |
-| `npm run build`                 | Production build (every route prerenders except Talkapo, which is per-session) |
-| `npm start`                     | Serve the production build                                                     |
-| `npm run lint`                  | ESLint with the Next.js config                                                 |
-| `npm run typecheck`             | TypeScript with no emit                                                        |
-| `npm run format`                | Prettier, including Tailwind class sorting                                     |
-| `npm run shots`                 | Visual smoke test — see below                                                  |
-| `npm run test:demos`            | Interaction test — drives the demos for real                                   |
-| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible                               |
+| Command                         | What it does                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `npm run dev`                   | Dev server with Turbopack and hot reload                                        |
+| `npm run build`                 | Production build (every route prerenders except AnonChat, which is per-session) |
+| `npm start`                     | Serve the production build                                                      |
+| `npm run lint`                  | ESLint with the Next.js config                                                  |
+| `npm run typecheck`             | TypeScript with no emit                                                         |
+| `npm run format`                | Prettier, including Tailwind class sorting                                      |
+| `npm run shots`                 | Visual smoke test — see below                                                   |
+| `npm run test:demos`            | Interaction test — drives the demos for real                                    |
+| `node scripts/motion-check.mjs` | Proves no animation can strand content invisible                                |
 
 ### Visual smoke test
 
@@ -162,7 +162,7 @@ and rebuilt here — see [its own section below](#lumen-café).
 tool as a single HTML prototype and was rebuilt here as real routes — see
 [its own section below](#usa-equipment-co).
 
-**Talkapo is the one demo with a real database.** A social feed and chat client
+**AnonChat is the one demo with a real database.** A social feed and chat client
 on Supabase, where the login gate is a row-level security policy rather than a
 hidden tab — see [its own section below](#talkapo).
 
@@ -322,7 +322,7 @@ number against the fleet rather than trusting what the browser sent — there is
 no total to protect the way a checkout has, but the browser still does not get
 to describe the yard's inventory back to it.
 
-### Talkapo
+### AnonChat
 
 The only demo with a database. A social feed and a shared chat room on Supabase
 Postgres, rebuilt from a Figma Make export that had four screens switching on
@@ -330,25 +330,33 @@ component state and every post hard-coded.
 
 Setup is five minutes and documented in
 [`supabase/README.md`](supabase/README.md). **Skip it and nothing breaks** — the
-site still builds and deploys, and Talkapo runs read-only on seed content with a
+site still builds and deploys, and AnonChat runs read-only on seed content with a
 banner saying so. That fallback is not a test fixture; it is what stops a
 portfolio from showing an error page to anyone who clones it without an account.
 
 **The login gate is a database policy, not a hidden tab.** This is the whole
 point of the demo. The feed is world-readable, so a signed-out visitor and a
 crawler both get the complete list server-rendered. Writing anything needs an
-account. And `talkapo_lobby_messages` refuses to return a single row to an
-anonymous session — so the Messages screen is not a UI hiding content it has
+account. And the private tables refuse to return a single row to anyone outside
+the conversation — so the Messages screen is not a UI hiding content it has
 already fetched, there is genuinely nothing loaded. You can prove it from the
 SQL editor:
 
 ```sql
 set local role anon;
-select count(*) from public.talkapo_lobby_messages;  -- 0
+select count(*) from public.talkapo_direct_messages;  -- 0
+select count(*) from public.talkapo_conversations;    -- 0
 ```
 
-Every rule lives in [`supabase/migrations/0001_talkapo.sql`](supabase/migrations/0001_talkapo.sql),
-which is the file to read if you want to know what the app can actually do.
+Two pieces of that are easy to get wrong later. The membership check is
+`security definer`, because a policy on `conversation_members` that queries
+`conversation_members` recurses until Postgres gives up. And there is no insert
+policy on conversations or members at all — threads exist only through
+`talkapo_start_conversation`, so nobody can add themselves to a room they were
+not invited into.
+
+Every rule lives in [`supabase/migrations/`](supabase/migrations/), which is the
+set of files to read if you want to know what the app can actually do.
 
 **No token ever reaches the browser.** Every write is a Server Action, so the
 session stays in an httpOnly cookie the page cannot read, and XSS on this demo
@@ -357,27 +365,45 @@ database resolves who is asking from the cookie. The one thing the browser talks
 to directly is the realtime socket, which is read-only by nature and still
 subject to the same policies.
 
-**It cleans itself.** Anything a visitor writes carries a 24-hour `expires_at`
-and stops being readable the moment it lapses, because the read policies filter
-on it. Seed rows never expire, so the feed is never empty. Inserts are
-rate-limited by a trigger rather than a policy — a policy can only say no, while
-a trigger can return a message worth showing the person who tripped it. Together
-that is what makes a publicly writable feed safe to leave unattended on a
-portfolio.
+**Nothing survives a day, including the account.** That is the product rather
+than a housekeeping detail — it is what the name is about. A profile carries the
+same 24-hour `expires_at` its posts do, and two separate mechanisms enforce it,
+because either one alone is a lie in a different direction:
 
-**Talkapo does not prerender**, and cannot: every screen depends on who is
+- **Reads filter on the deadline**, so an expired account stops existing the
+  moment it lapses. Without this there is a window where a dead account can
+  still post.
+- **A scheduled sweep deletes the auth user**, which cascades to the profile,
+  posts, likes, comments and both halves of every private conversation. Without
+  this the data is merely hidden while being kept forever, which is worse than
+  never having promised.
+
+The sweep is `pg_cron` and is **not** created by the migration — see
+[`supabase/README.md`](supabase/README.md) step 2a. Inserts are rate-limited by
+a trigger rather than a policy, because a policy can only say no while a trigger
+can return a message worth showing. Together that is what makes a publicly
+writable feed safe to leave unattended on a portfolio: there is no moderation
+burden when the whole thing empties itself overnight.
+
+**AnonChat does not prerender**, and cannot: every screen depends on who is
 asking. The feed carries `likedByMe` on every row, so there is no single version
 of it to cache and hand to two different people. It is still server-rendered
 HTML with the whole feed in it — the property that matters for crawling — just
-built per request. Everything outside `/work/talkapo` still prerenders.
+built per request. Everything outside `/work/anonchat` still prerenders.
 
-Two departures from the mockup worth knowing about. The avatars are drawn from a
-hash of the handle rather than hotlinked from Unsplash — the originals were
-photographs of real people standing in for fictional ones, cost a third-party
-request each, and would have left every real signup looking like a placeholder
-next to the seeded cast. And the private 1:1 inbox became one public lobby,
-because the first visitor to a DM demo has nobody to message and sees an empty
-room.
+The avatars are drawn from a hash of the handle rather than hotlinked from
+Unsplash, as the mockup had them: the originals were photographs of real people
+standing in for fictional ones, and cost a third-party request each.
+
+The demo was called Talkapo while the messages screen was a single public lobby,
+which was a stand-in — the first visitor to a DM demo has nobody to talk to. Once
+accounts were real that stopped being necessary, so it became the private 1:1
+inbox the design drew, the seeded cast was deleted, and the name changed to match
+what the thing actually does. `/work/talkapo` still redirects.
+
+The Postgres tables are still named `talkapo_*`. Renaming live tables opens a
+window where the deployed build queries relations that no longer exist, which is
+a poor trade for tidiness.
 
 ## Notes on some deliberate choices
 
@@ -425,8 +451,8 @@ accepting npm's suggestion to downgrade Next.js to 9.3.3.
 
 ## Deploying
 
-Everything prerenders to static HTML except Talkapo, whose three routes are
-all per-session and render on request. Drop Talkapo and the whole site is static
+Everything prerenders to static HTML except AnonChat, whose three routes are
+all per-session and render on request. Drop AnonChat and the whole site is static
 again, and any static host works. On Vercel:
 
 ```bash
@@ -434,7 +460,7 @@ npm i -g vercel
 vercel
 ```
 
-Talkapo needs two environment variables to go live — see
+AnonChat needs two environment variables to go live — see
 [`supabase/README.md`](supabase/README.md). Without them the site still builds
 and deploys; that demo runs read-only on seed content and says so on the page.
 
@@ -445,7 +471,7 @@ them slower, and that splitting them into separate Vercel projects would help.
 Measured against production, it would not — and it would cost something real.
 
 Every route here is code-split by Next already: opening `/projects` downloads
-none of Lumen's JavaScript, none of the yard's, none of Talkapo's. The fonts are
+none of Lumen's JavaScript, none of the yard's, none of AnonChat's. The fonts are
 declared per layout for the same reason, so Lumen's two faces never reach the
 other demos. Five of six routes are CDN cache **HIT**s served from the edge
 nearest the reader, which is exactly what a separate project would give — the
@@ -464,9 +490,9 @@ Measured on production, Manila → `fortefolio-cyan.vercel.app`:
 | `/projects`           | 320ms  | HIT   |
 | `/work/lumen-cafe`    | 309ms  | HIT   |
 | `/work/usa-equipment` | 322ms  | HIT   |
-| `/work/talkapo`       | 1202ms | MISS  |
+| `/work/anonchat`      | 1202ms | MISS  |
 
-The odd one out is Talkapo, and sharing a project is not why. It is the only
+The odd one out is AnonChat, and sharing a project is not why. It is the only
 route that cannot be cached — it reads a session cookie and queries Postgres per
 request — so it runs as a function, and the function was running in `iad1`
 (Washington DC) while the database sits in AWS `ap-southeast-1` (Singapore) and
@@ -475,10 +501,10 @@ the reader is in Manila. Each page view crossed the Pacific twice.
 `vercel.json` pins functions to `sin1`, which is beside both the reader and the
 database. Median of eight warm samples afterwards:
 
-| Route           | Before | After     |
-| --------------- | ------ | --------- |
-| `/projects`     | 320ms  | 291ms     |
-| `/work/talkapo` | 1202ms | **401ms** |
+| Route            | Before | After     |
+| ---------------- | ------ | --------- |
+| `/projects`      | 320ms  | 291ms     |
+| `/work/anonchat` | 1202ms | **401ms** |
 
 The cached route did not move, which is the point — it never touched a function.
 The uncached one went to a third of what it was, without splitting anything.

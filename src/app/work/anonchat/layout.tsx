@@ -1,10 +1,10 @@
 import { Inter, Outfit } from "next/font/google";
 import { DemoBar } from "@/components/demo-bar";
-import { getMyProfile } from "./data";
-import { TalkapoNav } from "./nav";
+import { getMyExpiry, getMyProfile } from "./data";
+import { AnonChatNav } from "./nav";
 
 /**
- * Chrome shared by every Talkapo screen.
+ * Chrome shared by every AnonChat screen.
  *
  * The two faces go through `next/font`, self-hosted at build time, rather than
  * the mockup's `@import` from fonts.googleapis.com — that import blocks
@@ -20,26 +20,26 @@ const sans = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
-  variable: "--font-tk-sans",
+  variable: "--font-ac-sans",
 });
 
 const display = Outfit({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   display: "swap",
-  variable: "--font-tk-display",
+  variable: "--font-ac-display",
 });
 
-export default async function TalkapoLayout({ children }: { children: React.ReactNode }) {
-  const me = await getMyProfile();
+export default async function AnonChatLayout({ children }: { children: React.ReactNode }) {
+  const [me, expiresAt] = await Promise.all([getMyProfile(), getMyExpiry()]);
 
   return (
-    <div className={`talkapo flex min-h-full flex-col ${sans.variable} ${display.variable}`}>
-      <DemoBar name="Talkapo" slug="talkapo" />
+    <div className={`anonchat flex min-h-full flex-col ${sans.variable} ${display.variable}`}>
+      <DemoBar name="AnonChat" slug="anonchat" />
 
       {/* 2.75rem is the demo bar; the app fills exactly what is left */}
       <div className="flex h-[calc(100dvh-2.75rem)] overflow-hidden text-sm">
-        <TalkapoNav me={me} />
+        <AnonChatNav me={me} expiresAt={expiresAt} />
         {children}
       </div>
     </div>

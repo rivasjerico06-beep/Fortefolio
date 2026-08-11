@@ -9,12 +9,12 @@ export default function MessagesIndex() {
       <div className="max-w-xs text-center">
         <span
           aria-hidden
-          className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full border border-[var(--tk-border)] bg-[var(--tk-card)]"
+          className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full border border-[var(--ac-border)] bg-[var(--ac-card)]"
         >
-          <MessageSquare size={20} className="text-[var(--tk-muted)]" />
+          <MessageSquare size={20} className="text-[var(--ac-muted)]" />
         </span>
-        <h2 className="tk-display mb-1.5 text-lg">Pick a conversation</h2>
-        <p className="text-sm leading-relaxed text-[var(--tk-muted)]">
+        <h2 className="ac-display mb-1.5 text-lg">Pick a conversation</h2>
+        <p className="text-sm leading-relaxed text-[var(--ac-muted)]">
           Or start a new one — the pencil opens a search of everyone with an account.
         </p>
       </div>

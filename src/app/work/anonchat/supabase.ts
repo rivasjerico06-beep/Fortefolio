@@ -1,7 +1,7 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
 
 /**
- * Supabase wiring for the Talkapo demo.
+ * Supabase wiring for the AnonChat demo.
  *
  * Both values are safe in the browser bundle. The anon key is designed to be
  * public — it identifies the project and nothing else, and every table it can

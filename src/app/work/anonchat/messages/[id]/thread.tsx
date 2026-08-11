@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Send } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { clockTime, type DirectMessage, type Profile } from "../../data";
+import { BASE, clockTime, type DirectMessage, type Profile } from "../../data";
 import { supabaseBrowser } from "../../supabase";
 import { Avatar } from "../../parts";
 import { sendDirectMessage } from "../../actions";
@@ -58,7 +59,7 @@ export function Thread({
       if (cancelled) return;
 
       channel = supabase
-        .channel(`talkapo-thread-${conversationId}`)
+        .channel(`anonchat-thread-${conversationId}`)
         .on(
           "postgres_changes",
           {
@@ -100,21 +101,32 @@ export function Thread({
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--tk-border)] px-5">
+      <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-[var(--ac-border)] px-3 sm:px-5">
+        {/* On a phone this pane replaces the conversation list, so there has to
+            be a way back to it. Above `sm` the list is still on screen beside
+            this one and a back button would point at something already open. */}
+        <Link
+          href={`${BASE}/messages`}
+          aria-label="Back to conversations"
+          className="-ml-1 shrink-0 rounded-full p-2 transition hover:bg-[var(--ac-secondary)] sm:hidden"
+        >
+          <ArrowLeft size={20} aria-hidden />
+        </Link>
+
         <Avatar profile={other} size={40} />
         <div className="min-w-0">
           <h2 className="truncate text-base leading-tight font-bold">{other.displayName}</h2>
-          <p className="truncate text-xs text-[var(--tk-muted)]">@{other.handle}</p>
+          <p className="truncate text-xs text-[var(--ac-muted)]">@{other.handle}</p>
         </div>
       </header>
 
-      <div ref={scroller} className="tk-scroll flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-        <p className="self-center rounded-full bg-[var(--tk-secondary)] px-3 py-1 text-center text-xs text-[var(--tk-muted)]">
+      <div ref={scroller} className="ac-scroll flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+        <p className="self-center rounded-full bg-[var(--ac-secondary)] px-3 py-1 text-center text-xs text-[var(--ac-muted)]">
           Private between you and {other.displayName}. Messages clear after 24 hours.
         </p>
 
         {messages.length === 0 ? (
-          <p className="mt-6 self-center text-sm text-[var(--tk-muted)]">
+          <p className="mt-6 self-center text-sm text-[var(--ac-muted)]">
             Nothing here yet — say hello.
           </p>
         ) : null}
@@ -126,7 +138,7 @@ export function Thread({
             <div
               key={message.id}
               className={cn(
-                "tk-arrive flex max-w-[80%] flex-col",
+                "ac-arrive flex max-w-[80%] flex-col",
                 message.fromMe ? "items-end self-end" : "items-start self-start",
                 grouped ? "-mt-2" : "",
               )}
@@ -136,14 +148,14 @@ export function Thread({
                   "rounded-2xl px-4 py-2.5",
                   message.fromMe
                     ? "rounded-br-sm bg-white text-black"
-                    : "rounded-bl-sm border border-[var(--tk-border)] bg-[var(--tk-secondary)]",
+                    : "rounded-bl-sm border border-[var(--ac-border)] bg-[var(--ac-secondary)]",
                 )}
               >
                 <p className="leading-relaxed break-words">{message.content}</p>
               </div>
               <time
                 dateTime={message.createdAt}
-                className="mt-1 px-1 text-[11px] text-[var(--tk-muted)]"
+                className="mt-1 px-1 text-[11px] text-[var(--ac-muted)]"
               >
                 {clockTime(message.createdAt)}
               </time>
@@ -154,18 +166,18 @@ export function Thread({
         <div ref={endRef} />
       </div>
 
-      <div className="border-t border-[var(--tk-border)] p-4">
+      <div className="border-t border-[var(--ac-border)] p-4">
         {error ? (
-          <p role="alert" className="mb-2 text-sm text-[var(--tk-warn)]">
+          <p role="alert" className="mb-2 text-sm text-[var(--ac-warn)]">
             {error}
           </p>
         ) : null}
-        <div className="flex items-end gap-2 rounded-3xl border border-transparent bg-[var(--tk-secondary)] p-2 focus-within:border-[var(--tk-border-strong)]">
-          <label htmlFor="tk-dm-input" className="sr-only">
+        <div className="flex items-end gap-2 rounded-3xl border border-transparent bg-[var(--ac-secondary)] p-2 focus-within:border-[var(--ac-border-strong)]">
+          <label htmlFor="ac-dm-input" className="sr-only">
             Message {other.displayName}
           </label>
           <textarea
-            id="tk-dm-input"
+            id="ac-dm-input"
             value={text}
             onChange={(event) => setText(event.target.value)}
             onKeyDown={(event) => {

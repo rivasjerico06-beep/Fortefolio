@@ -49,7 +49,7 @@ export function Feed({ posts, me }: { posts: Post[]; me: Profile | null }) {
       if (cancelled) return;
 
       channel = supabase
-        .channel("talkapo-feed")
+        .channel("anonchat-feed")
         .on("postgres_changes", { event: "*", schema: "public", table: "talkapo_posts" }, () =>
           router.refresh(),
         )
@@ -66,7 +66,7 @@ export function Feed({ posts, me }: { posts: Post[]; me: Profile | null }) {
   }, [router]);
 
   return (
-    <div className="tk-scroll flex-1 overflow-y-auto">
+    <div className="ac-scroll flex-1 overflow-y-auto">
       <Composer me={me} />
       <ul>
         {posts.map((post) => (
@@ -74,7 +74,7 @@ export function Feed({ posts, me }: { posts: Post[]; me: Profile | null }) {
         ))}
       </ul>
       {posts.length === 0 ? (
-        <p className="p-8 text-center text-[var(--tk-muted)]">
+        <p className="p-8 text-center text-[var(--ac-muted)]">
           Nothing here yet. Be the first to post.
         </p>
       ) : null}
@@ -89,7 +89,7 @@ function Composer({ me }: { me: Profile | null }) {
 
   if (!me) {
     return (
-      <div className="border-b border-[var(--tk-border)] p-4 px-6">
+      <div className="border-b border-[var(--ac-border)] p-4 px-6">
         <LoginGate action="Log in to post to the feed." compact />
       </div>
     );
@@ -107,14 +107,14 @@ function Composer({ me }: { me: Profile | null }) {
   }
 
   return (
-    <div className="flex gap-4 border-b border-[var(--tk-border)] p-4 px-6">
+    <div className="flex gap-4 border-b border-[var(--ac-border)] p-4 px-6">
       <Avatar profile={me} size={40} />
       <div className="flex-1">
-        <label htmlFor="tk-composer" className="sr-only">
+        <label htmlFor="ac-composer" className="sr-only">
           What&rsquo;s on your mind?
         </label>
         <textarea
-          id="tk-composer"
+          id="ac-composer"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder="What's on your mind?"
@@ -122,15 +122,15 @@ function Composer({ me }: { me: Profile | null }) {
           className="mt-1 mb-2 w-full resize-none border-none bg-transparent text-lg outline-none"
         />
         {error ? (
-          <p role="alert" className="mb-2 text-sm text-[var(--tk-warn)]">
+          <p role="alert" className="mb-2 text-sm text-[var(--ac-warn)]">
             {error}
           </p>
         ) : null}
-        <div className="flex items-center justify-between border-t border-[var(--tk-border)] pt-2">
+        <div className="flex items-center justify-between border-t border-[var(--ac-border)] pt-2">
           <span
             className={cn(
               "text-xs tabular-nums",
-              over ? "text-[var(--tk-like)]" : "text-[var(--tk-muted)]",
+              over ? "text-[var(--ac-like)]" : "text-[var(--ac-muted)]",
             )}
           >
             {text.length}/280
@@ -175,19 +175,19 @@ function PostRow({ post, me }: { post: Post; me: Profile | null }) {
   }
 
   return (
-    <li className="border-b border-[var(--tk-border)] p-4 px-6 transition hover:bg-white/[0.02]">
+    <li className="border-b border-[var(--ac-border)] p-4 px-6 transition hover:bg-white/[0.02]">
       <div className="flex gap-4">
         <Avatar profile={post.author} size={40} />
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-baseline gap-2">
             <span className="font-bold">{post.author.displayName}</span>
-            <span className="text-[var(--tk-muted)]">@{post.author.handle}</span>
-            <span aria-hidden className="text-xs text-[var(--tk-muted)]">
+            <span className="text-[var(--ac-muted)]">@{post.author.handle}</span>
+            <span aria-hidden className="text-xs text-[var(--ac-muted)]">
               ·
             </span>
             <time
               dateTime={post.createdAt}
-              className="text-[var(--tk-muted)]"
+              className="text-[var(--ac-muted)]"
               title={new Date(post.createdAt).toLocaleString()}
             >
               {shortAgo(post.createdAt)}
@@ -196,7 +196,7 @@ function PostRow({ post, me }: { post: Post; me: Profile | null }) {
 
           <p className="mb-3 text-[15px] leading-relaxed break-words">{post.content}</p>
 
-          <div className="flex max-w-md items-center justify-between pr-10 text-[var(--tk-muted)]">
+          <div className="flex max-w-md items-center justify-between pr-10 text-[var(--ac-muted)]">
             <ActionButton
               label={`${post.comments} comments`}
               count={post.comments}
@@ -212,7 +212,7 @@ function PostRow({ post, me }: { post: Post; me: Profile | null }) {
             <ActionButton
               label="Repost"
               onClick={() => gate("repost")}
-              hover="hover:text-[var(--tk-repost)]"
+              hover="hover:text-[var(--ac-repost)]"
             >
               <Repeat2 size={18} aria-hidden />
             </ActionButton>
@@ -223,8 +223,8 @@ function PostRow({ post, me }: { post: Post; me: Profile | null }) {
               pressed={optimistic.liked}
               onClick={like}
               disabled={pending}
-              hover="hover:text-[var(--tk-like)]"
-              active={optimistic.liked ? "text-[var(--tk-like)]" : undefined}
+              hover="hover:text-[var(--ac-like)]"
+              active={optimistic.liked ? "text-[var(--ac-like)]" : undefined}
             >
               <Heart size={18} aria-hidden fill={optimistic.liked ? "currentColor" : "none"} />
             </ActionButton>
@@ -235,10 +235,10 @@ function PostRow({ post, me }: { post: Post; me: Profile | null }) {
           </div>
 
           {error ? (
-            <p role="alert" className="mt-3 text-sm text-[var(--tk-warn)]">
+            <p role="alert" className="mt-3 text-sm text-[var(--ac-warn)]">
               {error}{" "}
               {!me ? (
-                <a href="/work/talkapo/login" className="underline">
+                <a href="/work/anonchat/login" className="underline">
                   Have an account? Log in
                 </a>
               ) : null}
@@ -305,11 +305,11 @@ function CommentBox({ postId }: { postId: string }) {
 
   return (
     <div className="mt-3 flex gap-2">
-      <label htmlFor={`tk-comment-${postId}`} className="sr-only">
+      <label htmlFor={`ac-comment-${postId}`} className="sr-only">
         Write a comment
       </label>
       <input
-        id={`tk-comment-${postId}`}
+        id={`ac-comment-${postId}`}
         ref={input}
         value={text}
         onChange={(event) => setText(event.target.value)}
@@ -317,7 +317,7 @@ function CommentBox({ postId }: { postId: string }) {
           if (event.key === "Enter" && text.trim()) submit();
         }}
         placeholder="Write a comment"
-        className="flex-1 rounded-full border border-[var(--tk-border)] bg-[var(--tk-secondary)] px-4 py-2 text-sm outline-none focus:border-[var(--tk-border-strong)]"
+        className="flex-1 rounded-full border border-[var(--ac-border)] bg-[var(--ac-secondary)] px-4 py-2 text-sm outline-none focus:border-[var(--ac-border-strong)]"
       />
       <button
         type="button"
@@ -328,7 +328,7 @@ function CommentBox({ postId }: { postId: string }) {
         {pending ? "…" : "Reply"}
       </button>
       {error ? (
-        <p role="alert" className="text-sm text-[var(--tk-warn)]">
+        <p role="alert" className="text-sm text-[var(--ac-warn)]">
           {error}
         </p>
       ) : null}

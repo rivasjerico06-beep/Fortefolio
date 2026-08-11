@@ -23,17 +23,29 @@ import { startConversation } from "../actions";
  */
 export function Inbox({ conversations }: { conversations: Conversation[] }) {
   const [searching, setSearching] = useState(false);
+  const pathname = usePathname();
+
+  /* A phone has room for the list or the conversation, not both. With a thread
+     open the list steps aside; from `sm` up they sit side by side as designed.
+     Done with a class rather than by not rendering, so navigating between
+     threads never unmounts and refetches the list. */
+  const threadOpen = /\/messages\/[^/]+$/.test(pathname);
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-r border-[var(--tk-border)] sm:w-[320px] lg:w-[380px]">
-      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--tk-border)] px-4">
-        <h1 className="tk-display text-xl">Messages</h1>
+    <aside
+      className={cn(
+        "w-full shrink-0 flex-col border-r border-[var(--ac-border)] sm:flex sm:w-[320px] lg:w-[380px]",
+        threadOpen ? "hidden" : "flex",
+      )}
+    >
+      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-[var(--ac-border)] px-4">
+        <h1 className="ac-display text-xl">Messages</h1>
         <button
           type="button"
           onClick={() => setSearching((open) => !open)}
           aria-expanded={searching}
           aria-label={searching ? "Close new message" : "New message"}
-          className="rounded-full p-2 transition hover:bg-[var(--tk-secondary)]"
+          className="rounded-full p-2 transition hover:bg-[var(--ac-secondary)]"
         >
           {searching ? <X size={20} aria-hidden /> : <Edit size={20} aria-hidden />}
         </button>
@@ -53,8 +65,8 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
 
   if (conversations.length === 0) {
     return (
-      <div className="tk-scroll flex-1 overflow-y-auto p-6 text-center">
-        <p className="text-[15px] text-[var(--tk-muted)]">
+      <div className="ac-scroll flex-1 overflow-y-auto p-6 text-center">
+        <p className="text-[15px] text-[var(--ac-muted)]">
           No conversations yet. Use the pencil to find someone and say hello.
         </p>
       </div>
@@ -62,7 +74,7 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
   }
 
   return (
-    <ul className="tk-scroll flex-1 overflow-y-auto">
+    <ul className="ac-scroll flex-1 overflow-y-auto">
       {conversations.map((conversation) => {
         const href = `${BASE}/messages/${conversation.id}`;
         const active = pathname === href;
@@ -74,7 +86,7 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 p-4 transition",
-                active ? "bg-[var(--tk-secondary)]" : "hover:bg-white/[0.03]",
+                active ? "bg-[var(--ac-secondary)]" : "hover:bg-white/[0.03]",
               )}
             >
               <Avatar profile={conversation.other} size={48} />
@@ -86,13 +98,13 @@ function ConversationList({ conversations }: { conversations: Conversation[] }) 
                   {conversation.lastAt ? (
                     <time
                       dateTime={conversation.lastAt}
-                      className="shrink-0 text-xs text-[var(--tk-muted)]"
+                      className="shrink-0 text-xs text-[var(--ac-muted)]"
                     >
                       {shortAgo(conversation.lastAt)}
                     </time>
                   ) : null}
                 </div>
-                <p className="truncate text-sm text-[var(--tk-muted)]">
+                <p className="truncate text-sm text-[var(--ac-muted)]">
                   {conversation.lastMessage
                     ? `${conversation.lastFromMe ? "You: " : ""}${conversation.lastMessage}`
                     : `@${conversation.other.handle}`}
@@ -143,41 +155,41 @@ function PeopleSearch({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="tk-scroll flex-1 overflow-y-auto">
+    <div className="ac-scroll flex-1 overflow-y-auto">
       <div className="p-4">
         <div className="relative">
           <Search
             size={18}
             aria-hidden
-            className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--tk-muted)]"
+            className="absolute top-1/2 left-4 -translate-y-1/2 text-[var(--ac-muted)]"
           />
-          <label htmlFor="tk-people" className="sr-only">
+          <label htmlFor="ac-people" className="sr-only">
             Search people by name or handle
           </label>
           <input
-            id="tk-people"
+            id="ac-people"
             ref={input}
             type="search"
             value={term}
             onChange={(event) => setTerm(event.target.value)}
             placeholder="Search people"
-            className="w-full rounded-full border border-transparent bg-[var(--tk-secondary)] py-2.5 pr-4 pl-11 outline-none focus:border-[var(--tk-border-strong)]"
+            className="w-full rounded-full border border-transparent bg-[var(--ac-secondary)] py-2.5 pr-4 pl-11 outline-none focus:border-[var(--ac-border-strong)]"
           />
         </div>
       </div>
 
       {error ? (
-        <p role="alert" className="px-4 pb-3 text-sm text-[var(--tk-warn)]">
+        <p role="alert" className="px-4 pb-3 text-sm text-[var(--ac-warn)]">
           {error}
         </p>
       ) : null}
 
       {results === null && pending ? (
-        <p className="px-4 text-sm text-[var(--tk-muted)]">Searching…</p>
+        <p className="px-4 text-sm text-[var(--ac-muted)]">Searching…</p>
       ) : null}
 
       {results !== null && results.length === 0 ? (
-        <p className="px-4 text-sm leading-relaxed text-[var(--tk-muted)]">
+        <p className="px-4 text-sm leading-relaxed text-[var(--ac-muted)]">
           {term.trim() ? `Nobody matches “${term.trim()}”.` : "Nobody else has an account yet."}{" "}
           Only people who have actually signed up appear here.
         </p>
@@ -195,7 +207,7 @@ function PeopleSearch({ onDone }: { onDone: () => void }) {
               <Avatar profile={profile} size={44} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{profile.displayName}</span>
-                <span className="block truncate text-sm text-[var(--tk-muted)]">
+                <span className="block truncate text-sm text-[var(--ac-muted)]">
                   @{profile.handle}
                 </span>
               </span>

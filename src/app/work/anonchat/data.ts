@@ -2,7 +2,7 @@ import { cache } from "react";
 import { isConfigured, supabaseServer } from "./supabase";
 
 /**
- * Reads for the Talkapo demo.
+ * Reads for the AnonChat demo.
  *
  * Every function here works in two modes. With a Supabase project configured it
  * queries the real database; without one it returns the same seed content the
@@ -14,7 +14,7 @@ import { isConfigured, supabaseServer } from "./supabase";
  * `isLive` tells the UI which mode it is in so it can say so out loud.
  */
 
-export const BASE = "/work/talkapo";
+export const BASE = "/work/anonchat";
 
 export type Profile = {
   id: string;
@@ -207,9 +207,13 @@ const AUTHOR = "talkapo_profiles!talkapo_posts_author_id_fkey(id, handle, displa
  * happens, so a broken query degrades instead of 500ing, but it says so where
  * somebody will see it.
  */
-function reportQueryFailure(what: string, error: { message: string; code?: string }) {
+function reportQueryFailure(
+  what: string,
+  error: { message: string; code?: string },
+  fallback = "seed content",
+) {
   console.error(
-    `[talkapo] ${what} query failed — falling back to seed content. ` +
+    `[anonchat] ${what} query failed — falling back to ${fallback}. ` +
       `${error.code ? `${error.code}: ` : ""}${error.message}`,
   );
 }
@@ -329,6 +333,27 @@ export async function getComments(postId: string): Promise<Comment[]> {
  */
 
 /** One row in the inbox: who it is with, and the last thing said. */
+/**
+ * When the signed-in account is deleted, as an ISO string.
+ *
+ * Read from the same `expires_at` column the sweep deletes on, through an RPC,
+ * rather than worked out in the browser from a signup time. A countdown that
+ * derives its own deadline will eventually disagree with the one being
+ * enforced, and the moment it does the page is lying about the one rule the
+ * whole demo is built around.
+ */
+export const getMyExpiry = cache(async (): Promise<string | null> => {
+  const supabase = await supabaseServer();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("talkapo_my_expiry");
+  if (error) {
+    reportQueryFailure("expiry", error, "no countdown (run migration 0004)");
+    return null;
+  }
+  return (data as string | null) ?? null;
+});
+
 export async function getConversations(): Promise<Conversation[] | null> {
   const supabase = await supabaseServer();
   if (!supabase) return null;
