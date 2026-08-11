@@ -437,3 +437,42 @@ vercel
 Talkapo needs two environment variables to go live — see
 [`supabase/README.md`](supabase/README.md). Without them the site still builds
 and deploys; that demo runs read-only on seed content and says so on the page.
+
+## Why this is one Vercel project, not five
+
+A reasonable instinct is that five demos in one deployment must make each of
+them slower, and that splitting them into separate Vercel projects would help.
+Measured against production, it would not — and it would cost something real.
+
+Every route here is code-split by Next already: opening `/projects` downloads
+none of Lumen's JavaScript, none of the yard's, none of Talkapo's. The fonts are
+declared per layout for the same reason, so Lumen's two faces never reach the
+other demos. Five of six routes are CDN cache **HIT**s served from the edge
+nearest the reader, which is exactly what a separate project would give — the
+same CDN, the same file.
+
+What splitting would add: navigating between the portfolio and a demo becomes a
+cross-origin page load instead of a client-side transition, React and the Next
+runtime get downloaded again per project rather than shared, and every change
+touching shared components needs five deploys instead of one.
+
+Measured on production, Manila → `fortefolio-cyan.vercel.app`:
+
+| Route                 | TTFB   | Cache |
+| --------------------- | ------ | ----- |
+| `/`                   | 245ms  | HIT   |
+| `/projects`           | 320ms  | HIT   |
+| `/work/lumen-cafe`    | 309ms  | HIT   |
+| `/work/usa-equipment` | 322ms  | HIT   |
+| `/work/talkapo`       | 1202ms | MISS  |
+
+The odd one out is Talkapo, and sharing a project is not why. It is the only
+route that cannot be cached — it reads a session cookie and queries Postgres per
+request — so it runs as a function, and the function was running in `iad1`
+(Washington DC) while the database sits in AWS `ap-southeast-1` (Singapore) and
+the reader is in Manila. Each page view crossed the Pacific twice.
+
+`vercel.json` pins functions to `sin1`, which is beside both the reader and the
+database. **If the Supabase project is ever moved to another region, move this
+with it** — a function pinned to the wrong side of an ocean is slower than one
+that was never pinned at all.
