@@ -473,6 +473,18 @@ request — so it runs as a function, and the function was running in `iad1`
 the reader is in Manila. Each page view crossed the Pacific twice.
 
 `vercel.json` pins functions to `sin1`, which is beside both the reader and the
-database. **If the Supabase project is ever moved to another region, move this
-with it** — a function pinned to the wrong side of an ocean is slower than one
-that was never pinned at all.
+database. Median of eight warm samples afterwards:
+
+| Route           | Before | After     |
+| --------------- | ------ | --------- |
+| `/projects`     | 320ms  | 291ms     |
+| `/work/talkapo` | 1202ms | **401ms** |
+
+The cached route did not move, which is the point — it never touched a function.
+The uncached one went to a third of what it was, without splitting anything.
+
+**If the Supabase project is ever moved to another region, move this with it** —
+a function pinned to the wrong side of an ocean is slower than one that was
+never pinned at all. Single readings here are worth nothing: a first pass showed
+every route, including CDN hits, three times slower, which was local network
+noise. Take a median.
