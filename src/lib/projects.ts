@@ -4,11 +4,15 @@
  *
  * Three of them — Lumen Café, USA Equipment and AnonChat — were drafted in a
  * design tool and rebuilt here against measured tokens. AnonChat is the only one
- * with a real database behind it; the rest are static by design. The other
- * three reproduce a WordPress layout — a theme with a pricing plugin, a
- * wp-admin plugin screen, and a WooCommerce shop archive — but are built as
- * static Next.js rather than PHP. The copy says so plainly: the point is that
- * the familiar layout does not require the weight that usually comes with it.
+ * with a real database behind it; the rest are static by design. Three more
+ * reproduce a WordPress layout — a theme with a pricing plugin, a wp-admin
+ * plugin screen, and a WooCommerce shop archive — but are built as static
+ * Next.js rather than PHP. The copy says so plainly: the point is that the
+ * familiar layout does not require the weight that usually comes with it.
+ *
+ * The Bindery is the exception to all of it, deliberately. It is the only
+ * project here that spends weight instead of saving it, and its case study is
+ * mostly an argument about when that is allowed.
  */
 export type Project = {
   slug: string;
@@ -134,6 +138,46 @@ export const projects: readonly Project[] = [
         label: "Anything retained past a day",
         value: "0",
         note: "the account goes with the posts",
+      },
+    ],
+  },
+  {
+    slug: "bindery",
+    name: "The Bindery",
+    kind: "Three.js shelf, built from a public brief",
+    summary:
+      "Seven clothbound volumes on a shelf you can browse, pull out, orbit and read — every surface drawn into a canvas at runtime, so the scene downloads no images at all. Four volumes are the work in this portfolio; three are bound and blank.",
+    year: "2026",
+    stack: ["Three.js", "WebGL", "Canvas 2D", "Next.js"],
+    accent: "#7a2e36",
+    brief:
+      "Meng To published The Complete Shelf as an open build brief — a detailed spec for a Three.js library of hardcovers, explicitly inviting other people to build their own from it. This is that build, rebound around the four pieces of work worth putting on a shelf: Lumen Café, USA Equipment, AnonChat, and the portfolio itself.",
+    challenge:
+      "This site's whole argument is that most pages are four megabytes heavier than they need to be. Then it wants a 3D bookshelf, which is a WebGL renderer, a scene graph and a page of shaders — the single heaviest thing here by an order of magnitude. Either the demo is a hypocrisy, or the argument was never 'small at all costs' but 'nothing you did not choose'. It only survives as the second if the weight is quarantined, declared, and the content is readable without any of it.",
+    approach: [
+      "Serve the whole collection as server-rendered HTML underneath the canvas — every volume, every spread, every word printed inside the books. The 3D scene is a way of reading that page, not the only way; a crawler, a reader with JavaScript off and a browser with WebGL disabled all get the same content.",
+      "Draw every surface at runtime into a 2D canvas from a seeded PRNG — cloth weave, foil stamp, paper grain, page edges, endpapers, shelf timber, contact shadows. Nothing is a downloaded image, so a scene this dense adds no network requests, and the same seed always draws the same book.",
+      "Fake foil with maps instead of geometry: the stamp is drawn in its own colour, and a matching black-and-white mask drives metalnessMap and roughnessMap so only the stamped areas take a highlight while the cloth stays dead matte.",
+      "Never reparent the selected volume. The brief warns about the last-frame jump when a book moves between the shelf and an inspection scene graph — the cheapest way not to have that bug is not to make that move, so books stay in one group for their whole life and the camera travels instead.",
+      "Separate the two kinds of motion. Shelf-to-detail transitions are timed tweens that write their exact endpoint on the final frame; hover, cover angle and page settle are exponential smoothing on 1 − exp(−k·dt) with an epsilon snap. A per-frame lerp is neither, and it is why 3D scenes feel wrong on a 144Hz monitor.",
+      "Write the orbit controller rather than importing one. The scene needs orbit, pan and zoom around a single object, which is about seventy lines — OrbitControls is a dependency that would have to argue for its place, and on this page of all pages it loses.",
+      "Keep the reading panel near-black with white text and use each volume's foil colour only as an accent rule, so the interface contrast is fixed regardless of which book is selected. Theming the panel from the cloth is how the other case studies here ended up with contrast failures.",
+    ],
+    outcome: [
+      {
+        label: "Images downloaded",
+        value: "0",
+        note: "every texture is drawn at runtime",
+      },
+      {
+        label: "Three.js, gzipped",
+        value: "139KB",
+        note: "its own chunk, on this route and no other",
+      },
+      {
+        label: "Content behind WebGL",
+        value: "None",
+        note: "the collection is server-rendered HTML",
       },
     ],
   },

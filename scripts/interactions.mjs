@@ -568,6 +568,96 @@ ok("chart hover reveals a tooltip", await page.getByText("Organic search").nth(1
   ok("unimplemented nav is disabled, not a dead link", (await explore.count()) === 1);
 }
 
+// --- Bindery: the shelf, and the content that does not need it --------------
+{
+  const BD = `${BASE}/work/bindery`;
+  await page.goto(BD, { waitUntil: "networkidle" });
+
+  // The collection is server-rendered. This is the claim the case study makes,
+  // so it is checked against raw HTML rather than the hydrated DOM — a crawler
+  // and a reader with no JavaScript have to get all seven volumes and the text
+  // printed inside them.
+  const raw = await (await fetch(BD)).text();
+  // React separates adjacent text nodes with `<!-- -->`, so `Volume {n}` is
+  // three nodes in the serialised HTML. Strip markup before matching, or the
+  // assertion fails on a page that is in fact perfectly server-rendered.
+  const text = raw.replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, " ");
+  const labels = text.match(/Volume [1-7]\s*·/g) ?? [];
+  ok("all seven volumes are in the server HTML", labels.length >= 7, `${labels.length} found`);
+  ok(
+    "spread copy is in the HTML, not only on a page mesh",
+    raw.includes("The fastest request is the one never made"),
+  );
+  ok("the source brief is credited", raw.includes("MengTo/complete-shelf"));
+
+  const shelfReady = page.getByRole("button", { name: "Inspect this volume" });
+  await shelfReady.waitFor({ timeout: 30000 });
+  ok("the shelf paints and hands over its controls", true);
+
+  await page.getByRole("button", { name: "Next volume" }).click();
+  await page.waitForTimeout(1200);
+  ok(
+    "next steps along the shelf",
+    (await page.locator("body").innerText()).includes("Volume 2 of 7"),
+  );
+
+  await page.getByRole("button", { name: /Go to volume 5/ }).click();
+  await page.waitForTimeout(1200);
+  const five = await page.locator("body").innerText();
+  ok(
+    "a marker jumps straight to the unwritten volumes",
+    five.includes("Volume 5 of 7") && five.includes("Unwritten"),
+  );
+
+  await page.getByRole("button", { name: /Go to volume 1/ }).click();
+  await page.waitForTimeout(1200);
+  await shelfReady.click();
+  await page.getByRole("button", { name: "Open the book" }).waitFor({ timeout: 30000 });
+  await page.waitForTimeout(1800);
+  await page.getByRole("button", { name: "Open the book" }).click();
+  await page.waitForTimeout(1800);
+
+  const counter = page.locator("span.tabular-nums");
+  const turned = [];
+  for (let i = 0; i < 6; i += 1) {
+    const next = page.getByRole("button", { name: "Next page" });
+    if (await next.isDisabled()) break;
+    await next.click();
+    await page.waitForTimeout(1200);
+    turned.push(await counter.innerText());
+  }
+  ok(
+    "pages turn forward and stop at the last one",
+    turned.join(",") === "1 / 4,2 / 4,3 / 4,4 / 4",
+    turned.join(" → "),
+  );
+
+  for (let i = 0; i < 6; i += 1) {
+    const prev = page.getByRole("button", { name: "Previous page" });
+    if (await prev.isDisabled()) break;
+    await prev.click();
+    await page.waitForTimeout(1200);
+  }
+  ok("and rewind without sticking", (await counter.innerText()) === "0 / 4");
+
+  await page.keyboard.press("Escape");
+  await shelfReady.waitFor({ timeout: 30000 });
+  ok("Escape closes the volume and returns to the shelf", true);
+
+  // An unwritten volume must not offer a case study it does not have.
+  await page.getByRole("button", { name: /Go to volume 6/ }).click();
+  await page.waitForTimeout(1200);
+  await shelfReady.click();
+  await page.getByRole("button", { name: "Open the book" }).waitFor({ timeout: 30000 });
+  await page.waitForTimeout(1800);
+  const blankLinks = await page.locator("div.backdrop-blur-md a").count();
+  ok(
+    "an unwritten volume offers no case-study link",
+    blankLinks === 0,
+    `${blankLinks} link(s)`,
+  );
+}
+
 // --- Portfolio: theme toggle persists ---------------------------------------
 await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 const before = await page.evaluate(() => document.documentElement.dataset.theme);

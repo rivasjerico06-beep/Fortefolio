@@ -133,7 +133,8 @@ src/
     work/            the demo sites — no portfolio chrome, own identity each
       lumen-cafe/    local-business marketing site
       usa-equipment/ equipment yard: fleet, unit pages, quote list
-      talkapo/       social feed + chat, on Supabase Postgres
+      anonchat/      social feed + chat, on Supabase Postgres
+      bindery/       Three.js shelf of clothbound volumes
       nimbus/        SaaS landing page with interactive pricing
       atlas/         analytics dashboard, charts hand-built in SVG
       verde/         storefront with live filtering and a cart
@@ -165,6 +166,12 @@ tool as a single HTML prototype and was rebuilt here as real routes — see
 **AnonChat is the one demo with a real database.** A social feed and chat client
 on Supabase, where the login gate is a row-level security policy rather than a
 hidden tab — see [its own section below](#talkapo).
+
+**The Bindery is the one that spends weight instead of saving it.** A Three.js
+shelf of seven clothbound volumes — four of them the work above, three left
+bound and blank — where every surface is drawn into a canvas at runtime rather
+than downloaded. It was built from a public brief and it is the exception this
+site's whole argument has to survive; see [its own section below](#the-bindery).
 
 The other three still reproduce a layout clients recognise — a theme with a
 pricing plugin, a wp-admin plugin screen, and a WooCommerce shop archive — but
@@ -404,6 +411,68 @@ what the thing actually does. `/work/talkapo` still redirects.
 The Postgres tables are still named `talkapo_*`. Renaming live tables opens a
 window where the deployed build queries relations that no longer exist, which is
 a poor trade for tidiness.
+
+### The Bindery
+
+`/work/bindery` — a Three.js shelf of seven clothbound hardcovers. Browse the
+shelf with the wheel, arrow keys, buttons or markers; pull a volume out; orbit,
+pan and zoom it; hover the cover to crack it open; click to open to the title
+page; drag the pages. Four volumes are Lumen Café, USA Equipment, AnonChat and
+this site. Three are bound and blank.
+
+**It was built from someone else's brief, and says so.** Meng To published
+[The Complete Shelf](https://github.com/MengTo/complete-shelf) with a
+[public build prompt](https://github.com/MengTo/complete-shelf/blob/main/PROMPT.md)
+explicitly inviting other people to build their own from it. This is that: the
+concept, the interaction list and the verification checklist came from the
+brief; the geometry, materials, motion, content and code are written here and
+share no source with the original. The colophon on the page carries the credit
+where a visitor will actually see it, not only in this file.
+
+**This is the page that breaks the site's own budget.** Three.js is 139KB
+gzipped. It sits in its own chunk that no other route loads, so the cost is real
+but contained — and the argument was never "small at all costs", it was "nothing
+you did not choose". Two things keep it honest:
+
+- **Nothing is only reachable through WebGL.** Every volume and every word
+  printed inside them is server-rendered HTML underneath the canvas. A crawler,
+  a reader with JavaScript off, and a browser with WebGL disabled all get the
+  same content; the 3D scene is a way of reading that page, not the page.
+- **No images are downloaded at all.** Cloth weave, foil stamping, paper grain,
+  page edges, endpapers, shelf timber and the contact shadows are drawn into a
+  2D canvas at runtime from a seeded PRNG, in
+  [`textures.ts`](src/app/work/bindery/textures.ts). The same seed always draws
+  the same book.
+
+**Foil is three maps, not a second mesh.** The stamp is drawn in its own colour
+on the colour map, and a matching black-and-white mask drives `metalnessMap` and
+`roughnessMap`, so the stamped areas alone take a highlight while the cloth
+stays matte.
+
+**Nothing is ever reparented.** The brief warns about the last-frame jump when a
+selected volume moves between the shelf and an inspection scene graph. The
+cheapest way not to have that bug is not to make that move: books stay in one
+group for their whole life and the camera travels instead.
+
+**Two kinds of motion, deliberately not interchangeable.** Shelf↔detail
+transitions are timed tweens driven off `performance.now()` that write their
+exact endpoint on the final frame. Hover, cover angle and page settle are
+exponential smoothing on `1 - exp(-k·dt)` with an epsilon snap. Both were bugs
+first: the transition originally accumulated a clamped per-frame delta, which
+means that on hardware slower than the clamp, time itself runs slow — a 0.9s
+transition took nearly five seconds under software rendering.
+
+**The scene stops drawing when nothing moves.** The loop tracks whether anything
+actually changed this frame and skips `render()` when it did not, so a shelf
+sitting still costs no GPU time. On a site about not burning other people's
+electricity, redrawing an unchanged image sixty times a second is the same sin
+as shipping four megabytes.
+
+Camera distance is derived from the geometry rather than hardcoded — volumes
+differ in height, a book roughly doubles its width when the cover opens, and the
+viewport aspect decides which dimension binds. The framing also biases sideways
+on wide screens and downward on narrow ones so the volume clears the reading
+panel.
 
 ## Notes on some deliberate choices
 

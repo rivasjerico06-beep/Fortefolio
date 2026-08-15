@@ -46,6 +46,8 @@ const routes = [
   ["work-nimbus", "/work/nimbus"],
   ["work-atlas", "/work/atlas"],
   ["work-verde", "/work/verde"],
+  ["work-bindery", "/work/bindery"],
+  ["case-study-bindery", "/projects/bindery"],
 ];
 
 const browser = await chromium.launch();
