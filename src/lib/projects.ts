@@ -172,7 +172,7 @@ export const projects: readonly Project[] = [
       {
         label: "Three.js, gzipped",
         value: "139KB",
-        note: "its own chunk, on this route and no other",
+        note: "one deferred chunk, fetched only when a scene will run",
       },
       {
         label: "Content behind WebGL",

@@ -12,10 +12,21 @@ import { ScrubText } from "@/components/motion/scrub-text";
 import { HorizontalGallery } from "@/components/motion/horizontal-gallery";
 import { StackCards } from "@/components/motion/stack-cards";
 import { Parallax } from "@/components/motion/parallax";
+import { ScrollBook } from "@/components/bindery/scroll-book";
 
 export default function HomePage() {
   return (
     <>
+      {/*
+        ── The book ──────────────────────────────────────────────────────
+        The front door: one volume, turned by the scrollbar, a page per
+        project. It is the only part of this page that costs WebGL, and it
+        stands down to a static list of the same four projects under reduced
+        motion or without a GL context. The hero below it still carries the
+        name, the tagline and the live page-weight reading.
+      */}
+      <ScrollBook />
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         {/* Ambient light: drifts on its own, and lags the page as you scroll */}
@@ -129,7 +140,13 @@ export default function HomePage() {
       <section className="mx-auto max-w-[88rem] px-5 py-24 sm:px-8">
         <dl className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { value: 184, suffix: " KB", label: "Heaviest demo page", decimals: 0 },
+            // Narrowed rather than re-measured. This said "Heaviest demo page"
+            // until the 3D book arrived and made it false; 184 is still the
+            // verified figure for everything that is not the book, and
+            // replacing a number someone measured with one measured a
+            // different way would be the worse fix. The book's own cost is
+            // stated plainly in its case study.
+            { value: 184, suffix: " KB", label: "Heaviest demo without 3D", decimals: 0 },
             { value: 0.9, suffix: "s", label: "Typical LCP on 4G", decimals: 1 },
             { value: 100, suffix: "", label: "Lighthouse accessibility", decimals: 0 },
             { value: 0, suffix: "", label: "Charting libraries shipped", decimals: 0 },

@@ -26,7 +26,14 @@ const ok = (label, cond, detail = "") =>
   page.on("pageerror", (e) => fails.push(`pageerror: ${e.message}`));
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 
+  // The scroll-driven book now opens the home page, so the hero sits below it
+  // rather than above the fold. That makes it ordinary below-fold content: its
+  // reveal fires from the shared observer when it is scrolled to, exactly like
+  // every other section. Scroll to it before asserting — the thing worth
+  // proving is that it is never *stranded* invisible, not that it happens to
+  // start on screen.
   const heroWord = page.locator(".word-rise span span").first();
+  await heroWord.scrollIntoViewIfNeeded();
   ok("hero words are visible after animating", await heroWord.isVisible());
 
   // Wait for the transition to actually settle rather than guessing a duration —

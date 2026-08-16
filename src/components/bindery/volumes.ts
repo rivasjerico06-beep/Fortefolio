@@ -13,6 +13,8 @@
  * plastic under studio lighting.
  */
 
+import { siteConfig } from "@/lib/site-config";
+
 export type Spread = {
   /** Running head, printed small above the text block. */
   heading: string;
@@ -247,3 +249,37 @@ export const volumes: readonly Volume[] = [
 export function isUnwritten(volume: Volume) {
   return volume.foil === null;
 }
+
+/** The four bound volumes, in shelf order. */
+export const writtenVolumes = volumes.filter((volume) => !isUnwritten(volume));
+
+/**
+ * The single volume the home page scrolls through.
+ *
+ * The shelf demo gives every project its own book. The landing page is a
+ * different job: one book, one spread per project, turned by the scrollbar. So
+ * this is a compilation — bound in the studio's own cloth, with the four
+ * projects as its pages. The three unwritten volumes are deliberately not in
+ * it. On a shelf they read as room for more work; in a scroll they would be
+ * three empty screens between the last project and the end.
+ */
+export const portfolioVolume: Volume = {
+  slug: null,
+  href: "/projects",
+  title: "Selected Work",
+  subtitle: `${siteConfig.brand} · ${writtenVolumes.length} projects`,
+  spine: "Selected Work",
+  blurb: "Four projects, each one a working site rather than a screenshot. Turn the pages.",
+  binding: "Full cloth over boards, foil stamp, sewn",
+  year: "2026",
+  size: { width: 1.4, height: 2.0, depth: 0.34 },
+  cloth: "#14563a",
+  foil: "#9fe3c0",
+  paper: "#f1f4ef",
+  ink: "#0d1a13",
+  seed: 9017,
+  spreads: writtenVolumes.map((volume) => ({
+    heading: volume.title,
+    body: volume.blurb,
+  })),
+};

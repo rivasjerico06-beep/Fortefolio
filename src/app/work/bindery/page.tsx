@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { DemoBar } from "@/components/demo-bar";
 
 import { Shelf } from "./shelf";
-import { isUnwritten, volumes } from "./volumes";
+import { isUnwritten, volumes } from "@/components/bindery/volumes";
 
 export const metadata: Metadata = {
   title: "The Bindery — demo site",
@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 
 /**
  * The one page in this portfolio that spends its weight budget rather than
- * saving it — and it is code-split, so no other route pays for it.
+ * saving it. Three.js is fetched at runtime rather than imported into the
+ * page bundle, so it is shared with the scroll-driven book on the home page
+ * and downloaded by neither route until a scene is actually going to run.
  *
  * The collection below the canvas is not a fallback bolted on afterwards. It
  * is the page's content, server-rendered, and the shelf is a way of reading

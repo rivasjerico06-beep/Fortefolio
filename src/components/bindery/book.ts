@@ -50,6 +50,21 @@ export type Book = {
   dispose: () => void;
 };
 
+/**
+ * Distance at which a box of `width` × `height` just fits the frame.
+ *
+ * Shared by both scenes because both need it for the same reason: volumes
+ * differ in size, a book roughly doubles its width when the cover swings open,
+ * and the viewport aspect decides whether width or height is the binding
+ * constraint. A hardcoded distance that suits a closed book on a wide monitor
+ * puts the camera inside the front board of an open one on a phone.
+ */
+export function fitDistance(width: number, height: number, aspect: number, fovDegrees: number) {
+  const v = (fovDegrees * Math.PI) / 180;
+  const h = 2 * Math.atan(Math.tan(v / 2) * Math.max(0.3, aspect));
+  return Math.max(height / 2 / Math.tan(v / 2), width / 2 / Math.tan(h / 2));
+}
+
 function mirrored(texture: THREE.Texture) {
   const clone = texture.clone();
   clone.wrapS = THREE.RepeatWrapping;
@@ -69,7 +84,16 @@ function hingedPlane(width: number, height: number, segments: number) {
   return geometry;
 }
 
-export function createBook(volume: Volume, maps: BookMaps): Book {
+export function createBook(
+  volume: Volume,
+  maps: BookMaps,
+  /**
+   * Page faces, front to back, overriding the ones derived from the volume's
+   * own spreads. The home page's compilation volume supplies project pages
+   * this way rather than the generic spread layout.
+   */
+  faceOverride?: THREE.Texture[],
+): Book {
   const { width, height, depth } = volume.size;
   const disposables: { dispose: () => void }[] = [];
   const track = <T extends { dispose: () => void }>(item: T) => {
@@ -224,13 +248,19 @@ export function createBook(volume: Volume, maps: BookMaps): Book {
   // single sheet carrying the "this volume is unwritten" notice.
   const sheetWidth = blockWidth - 0.015;
   const sheetHeight = blockHeight - 0.02;
-  const faces: THREE.Texture[] = [track(makeTitlePageTexture(volume))];
-  for (let index = 0; index < volume.spreads.length; index += 1) {
-    faces.push(track(makeSpreadTexture(volume, index)));
+  const faces: THREE.Texture[] = faceOverride
+    ? faceOverride.map((texture) => track(texture))
+    : [track(makeTitlePageTexture(volume))];
+  if (!faceOverride) {
+    for (let index = 0; index < volume.spreads.length; index += 1) {
+      faces.push(track(makeSpreadTexture(volume, index)));
+    }
   }
 
   const sheets: Sheet[] = [];
-  const sheetCount = Math.max(1, faces.length - 1);
+  // One sheet per printed face. Turning sheet k brings sheet k+1's recto up,
+  // so a book with five faces needs four turns to reach the last of them.
+  const sheetCount = Math.max(1, faces.length);
   /** Front face of the text block, and the inside face of the front board. */
   const blockFront = blockDepth / 2;
   const boardInner = depth / 2 - BOARD;
@@ -248,10 +278,13 @@ export function createBook(volume: Volume, maps: BookMaps): Book {
         metalness: 0,
       }),
     );
-    const versoTexture = faces[index + 1] ?? faces[index];
+    // Plain stock on the back. Handing the verso the *next* face — which is
+    // the obvious thing to do and what this did first — prints the same page
+    // on both halves of an open book: the sheet you just turned shows page N
+    // on its back while the sheet beneath shows page N on its front.
     const versoMaterial = track(
       new THREE.MeshStandardMaterial({
-        map: track(mirrored(versoTexture)),
+        map: track(mirrored(maps.pageFace)),
         roughness: 0.95,
         metalness: 0,
         side: THREE.BackSide,

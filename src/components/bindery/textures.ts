@@ -437,6 +437,76 @@ export function makeSpreadTexture(volume: Volume, index: number) {
   return finish(element, true);
 }
 
+/**
+ * A project page for the compilation volume on the home page.
+ *
+ * Laid out as a real book page rather than reusing the generic spread: a folio
+ * number, the project's own accent as a rule, its title set large, the
+ * subtitle beneath, then the body. Each page carries the colour of the project
+ * it describes, so turning through the book walks the palette of the work.
+ */
+export function makeProjectPageTexture(
+  host: Volume,
+  project: Volume,
+  index: number,
+  total: number,
+) {
+  const { element, context } = canvas(512, 720);
+  context.fillStyle = host.paper;
+  context.fillRect(0, 0, 512, 720);
+  drawFleck(context, 512, 720, rng(host.seed + index * 71), 12000, 0.05);
+
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+
+  // Folio and running head.
+  context.fillStyle = host.ink;
+  context.globalAlpha = 0.45;
+  context.font = `500 14px ${LABEL_FONT}`;
+  context.fillText(
+    `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`,
+    64,
+    92,
+  );
+  context.textAlign = "right";
+  context.fillText(project.year, 448, 92);
+  context.globalAlpha = 1;
+  context.textAlign = "left";
+
+  // The project's own colour, as a stamped rule.
+  context.fillStyle = project.cloth;
+  context.fillRect(64, 116, 96, 5);
+
+  // Title.
+  context.fillStyle = host.ink;
+  context.font = `500 38px ${TITLE_FONT}`;
+  const title = wrap(context, project.title, 384, 2);
+  title.forEach((line, i) => context.fillText(line, 64, 186 + i * 46));
+
+  // Subtitle.
+  context.globalAlpha = 0.6;
+  context.font = `400 17px ${LABEL_FONT}`;
+  const sub = wrap(context, project.subtitle, 384, 2);
+  sub.forEach((line, i) => context.fillText(line, 64, 232 + title.length * 46 + i * 24));
+  context.globalAlpha = 1;
+
+  // Body.
+  context.font = `400 21px ${TITLE_FONT}`;
+  const bodyTop = 292 + title.length * 46 + sub.length * 24;
+  wrap(context, project.blurb, 384, 12).forEach((line, i) =>
+    context.fillText(line, 64, bodyTop + i * 33),
+  );
+
+  // Footer cue — the HTML panel carries the real link; this is the printed
+  // equivalent, so a screenshot of the page still says where to go.
+  context.globalAlpha = 0.45;
+  context.font = `500 13px ${LABEL_FONT}`;
+  context.fillText("READ THE CASE STUDY →", 64, 656);
+  context.globalAlpha = 1;
+
+  return finish(element, true);
+}
+
 /** The title page, shown first when a book opens. */
 export function makeTitlePageTexture(volume: Volume) {
   const { element, context } = canvas(512, 720);

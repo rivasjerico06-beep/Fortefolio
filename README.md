@@ -141,6 +141,7 @@ src/
     layout.tsx       <html>, fonts, pre-paint theme script
     globals.css      design tokens for both themes
   components/        header, footer, theme toggle, cards, reveal
+    bindery/         the book engine — geometry, textures, the scrolled book
     motion/          the scroll/animation layer (see below)
     wp/              the WordPress theme kit the other three demos are built from
   lib/               site config, project data, cn() helper
@@ -429,10 +430,15 @@ brief; the geometry, materials, motion, content and code are written here and
 share no source with the original. The colophon on the page carries the credit
 where a visitor will actually see it, not only in this file.
 
-**This is the page that breaks the site's own budget.** Three.js is 139KB
-gzipped. It sits in its own chunk that no other route loads, so the cost is real
-but contained — and the argument was never "small at all costs", it was "nothing
-you did not choose". Two things keep it honest:
+The same book engine opens the home page — see
+[the scroll-driven book](#the-scroll-driven-book) below.
+
+**This is where the site spends its budget.** Three.js is 139KB gzipped. It is
+never imported into any page bundle: both scenes `await import("three")` at
+runtime, after checking that a scene is actually going to run, so the two
+routes share one deferred chunk and a reader who will not see a scene never
+downloads it. The argument was never "small at all costs", it was "nothing you
+did not choose". Two things keep it honest:
 
 - **Nothing is only reachable through WebGL.** Every volume and every word
   printed inside them is server-rendered HTML underneath the canvas. A crawler,
@@ -441,7 +447,7 @@ you did not choose". Two things keep it honest:
 - **No images are downloaded at all.** Cloth weave, foil stamping, paper grain,
   page edges, endpapers, shelf timber and the contact shadows are drawn into a
   2D canvas at runtime from a seeded PRNG, in
-  [`textures.ts`](src/app/work/bindery/textures.ts). The same seed always draws
+  [`textures.ts`](src/components/bindery/textures.ts). The same seed always draws
   the same book.
 
 **Foil is three maps, not a second mesh.** The stamp is drawn in its own colour
@@ -473,6 +479,37 @@ differ in height, a book roughly doubles its width when the cover opens, and the
 viewport aspect decides which dimension binds. The framing also biases sideways
 on wide screens and downward on narrow ones so the volume clears the reading
 panel.
+
+### The scroll-driven book
+
+`/` opens with the same book engine, driven by the scrollbar instead of clicks:
+one compilation volume, a page per project, turning as you scroll until the
+last project. Underneath it the home page continues exactly as it was — hero,
+live page-weight reading, services, skills, contact.
+
+It is deliberately the simpler of the two scenes. There is **no state machine
+at all**: scroll position maps straight to cover angle and page rotation, so
+the frame is a pure function of `progressThrough(section)`. Scrub backwards and
+it runs backwards exactly, because nothing is remembered between frames. It
+subscribes to the shared scroll engine in [`lib/scroll.ts`](src/lib/scroll.ts)
+rather than adding a listener of its own.
+
+Three things it refuses to do:
+
+- **Pin under reduced motion.** A scrubbed pin is the effect that setting most
+  clearly asks you not to build. That path renders a static hero listing the
+  same four projects, at ordinary page height, and never starts a scene.
+- **Download Three.js speculatively.** The reduced-motion and WebGL checks run
+  _before_ the dynamic import, so most of the visitors who will not see the
+  book pay nothing for it. The home page's initial payload is ~235KB gzipped,
+  in line with every other page on the site.
+- **Be the only copy of the content.** Every project title and blurb is in the
+  server HTML, and the projects gallery further down the page is untouched.
+
+A portrait viewport cannot frame a whole open spread and leave the book
+readable — fitting the full width puts the camera three times further back than
+the height needs. On a narrow screen it frames the page you are reading and
+lets the rest run off frame, the way you would hold a book on a phone.
 
 ## Notes on some deliberate choices
 
