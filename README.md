@@ -482,17 +482,37 @@ panel.
 
 ### The scroll-driven book
 
-`/` opens with the same book engine, driven by the scrollbar instead of clicks:
-one compilation volume, a page per project, turning as you scroll until the
-last project. Underneath it the home page continues exactly as it was — hero,
-live page-weight reading, services, skills, contact.
+`/` opens with the same book engine, driven by the scrollbar instead of clicks.
+Each project is its own clothbound volume: it comes forward, its cover swings
+open, its pages turn one at a time, it closes and recedes, and the next one
+takes its place. The last page of the last book is the end of the scroll —
+there is no closing animation after it, because there is nothing left to go
+back to. Scrub upward and the whole thing runs backwards exactly. Underneath it
+the home page continues as it was — hero, live page-weight reading, services,
+skills, contact.
+
+Books are built on demand rather than all four up front, with the next one
+prepared a book ahead. Three extra sets of procedurally drawn cloth, foil and
+paper is a long stall on a landing page for volumes the reader may never reach.
 
 It is deliberately the simpler of the two scenes. There is **no state machine
-at all**: scroll position maps straight to cover angle and page rotation, so
-the frame is a pure function of `progressThrough(section)`. Scrub backwards and
-it runs backwards exactly, because nothing is remembered between frames. It
-subscribes to the shared scroll engine in [`lib/scroll.ts`](src/lib/scroll.ts)
-rather than adding a listener of its own.
+at all**: scroll position maps straight to which book is up, how far its cover
+has swung and how far each page has turned, so the frame is a pure function of
+`progressThrough(section)`. Nothing is remembered between frames, so there is
+nothing to fall out of sync. It subscribes to the shared scroll engine in
+[`lib/scroll.ts`](src/lib/scroll.ts) rather than adding a listener of its own.
+
+**Turning a page is not just a rotation.** The front board hinges outside the
+text block, so its arc always ends in front of a page swung to the same angle —
+by about 0.35 scene units at every angle. Rotation alone cannot close that gap:
+turning the page further sinks it behind the open board (the left half of the
+book reads as a blank slab), and turning it less leaves it standing off the
+board as a foreshortened strip. Both were built before the arithmetic was done.
+The hinge has to _travel forward_ over the turn, which is what paper does — a
+page lifts off the block and lands on top of the cover. That travel also has to
+grow with the page's index, because the stack inverts through the flip: the
+sheet turned last belongs on top of the left-hand pile, while its resting
+height in the shut book runs the other way.
 
 Three things it refuses to do:
 

@@ -1,14 +1,21 @@
 "use client";
 
 /**
- * The home page's opening: one book, turned by the scrollbar.
+ * The home page's opening: four books, turned by the scrollbar.
+ *
+ * The whole run of work is one continuous scroll. Each project is its own
+ * clothbound volume — it comes forward, its cover swings open, its pages turn
+ * one at a time, it closes and recedes, and the next one takes its place. The
+ * last page of the last book is the end of the scroll; there is no closing
+ * animation after it, because there is nothing left to go back to.
  *
  * The shelf demo at /work/bindery is click-driven and stateful. This is the
  * opposite and deliberately simpler — there is no state machine at all. Scroll
- * position maps straight to cover angle and page rotation, so the scene is a
- * pure function of `progressThrough(section)`. Scrub backwards and it runs
- * backwards exactly; there is nothing to get out of sync because nothing is
- * remembered between frames.
+ * position maps straight to which book is up, how far its cover has swung and
+ * how far each page has turned, so a frame is a pure function of
+ * `progressThrough(section)`. Scrub backwards and it runs backwards exactly:
+ * pages un-turn, covers re-close, books come back. Nothing is remembered
+ * between frames, so there is nothing to fall out of sync.
  *
  * It subscribes to the shared scroll engine in `lib/scroll` rather than adding
  * its own listener, so this scene costs the page nothing extra per frame.
@@ -17,28 +24,34 @@
  *   - Pin under reduced motion. A scrubbed pin is the one effect that setting
  *     most clearly asks you not to build, so that path renders a static hero.
  *   - Be the only copy of the content. Every project title and blurb is in the
- *     server HTML underneath, and the projects gallery further down the page
- *     is untouched.
- *   - Load at all without WebGL. Same fallback as reduced motion.
+ *     server HTML, and the projects gallery further down the page is untouched.
+ *   - Download Three.js speculatively. Both checks run before the import.
  */
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-
 import type * as ThreeNamespace from "three";
 
 import type { Book } from "./book";
-import { portfolioVolume, writtenVolumes } from "./volumes";
+import { writtenVolumes } from "./volumes";
 import { clamp01, prefersReducedMotion, progressThrough, subscribeScroll } from "@/lib/scroll";
 
 /** Vertical field of view, matching the shelf demo. */
 const V_FOV = 38;
-/** Scroll fractions: cover opens, then pages turn, then the last page holds. */
-const OPEN_FROM = 0.06;
-const OPEN_TO = 0.2;
-const PAGES_TO = 0.93;
 /** How far the cover swings when fully open. */
 const COVER_OPEN = Math.PI * 0.92;
+
+/**
+ * Where each phase of a single book's turn sits inside its slice of the
+ * scroll. The last book's page run continues to the very end instead of
+ * stopping at `PAGES_END` — reaching its final page is the end of the scroll.
+ */
+const ENTER_END = 0.1;
+const OPEN_END = 0.26;
+const PAGES_END = 0.88;
+
+/** Screens of scroll each book gets. Five beats fit comfortably in two. */
+const SCREENS_PER_BOOK = 2;
 
 function supportsWebGL() {
   try {
@@ -53,15 +66,21 @@ const smooth = (t: number) => t * t * (3 - 2 * t);
 /** Maps `value` from [a,b] onto [0,1], clamped and eased. */
 const between = (value: number, a: number, b: number) => smooth(clamp01((value - a) / (b - a)));
 
+/** Which book is up, and how far through its own sequence the scroll is. */
+function locate(p: number, count: number) {
+  const span = 1 / count;
+  const index = Math.min(count - 1, Math.max(0, Math.floor(p / span)));
+  return { index, q: clamp01((p - index * span) / span), isLast: index === count - 1 };
+}
+
 export function ScrollBook() {
   const sectionRef = useRef<HTMLElement | null>(null);
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [live, setLive] = useState(false);
-  const [active, setActive] = useState(-1);
+  /** Which book is showing, and which of its pages. -1 = not open yet. */
+  const [at, setAt] = useState({ book: 0, page: -1 });
 
-  // Turns needed to reach the last project: one off the title page, then one
-  // per project after the first.
-  const turns = writtenVolumes.length;
+  const count = writtenVolumes.length;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -78,12 +97,12 @@ export function ScrollBook() {
 
     const start = (
       THREE: typeof import("three"),
-      { bendSheet, createBook, fitDistance }: typeof import("./book"),
+      { bendSheet, createBook, fitDistance, sheetRestAngle }: typeof import("./book"),
       {
         makeBookMaps,
         makeContactShadowTexture,
         makeProjectPageTexture,
-        makeTitlePageTexture,
+        makeSpreadTexture,
       }: typeof import("./textures"),
     ) => {
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -117,24 +136,39 @@ export function ScrollBook() {
       rim.position.set(-1.2, 2.6, -4.6);
       scene.add(rim);
 
-      // The compilation volume: a title page, then one page per project.
-      const maps = makeBookMaps(portfolioVolume);
-      const faces = [
-        makeTitlePageTexture(portfolioVolume),
-        ...writtenVolumes.map((project, index) =>
-          makeProjectPageTexture(portfolioVolume, project, index, writtenVolumes.length),
-        ),
-      ];
-      const book: Book = createBook(portfolioVolume, maps, faces);
       const contact = makeContactShadowTexture();
-      (book.shadow.material as ThreeNamespace.MeshBasicMaterial).map = contact;
-      (book.shadow.material as ThreeNamespace.MeshBasicMaterial).needsUpdate = true;
-      scene.add(book.group);
+
+      // Books are built on demand rather than all four up front. This is the
+      // landing page: the first book has to be on screen quickly, and three
+      // more sets of procedurally drawn cloth, foil and paper is a long stall
+      // for volumes the reader may never scroll to. The next one is prepared
+      // one book ahead, which is far enough to never be caught out.
+      const built: (Book | null)[] = writtenVolumes.map(() => null);
+      const ensure = (index: number) => {
+        if (index < 0 || index >= writtenVolumes.length) return null;
+        const existing = built[index];
+        if (existing) return existing;
+
+        const volume = writtenVolumes[index];
+        // Its own project page first, then the volume's own spreads.
+        const faces = [
+          makeProjectPageTexture(volume, volume, index, writtenVolumes.length),
+          ...volume.spreads.map((_, spread) => makeSpreadTexture(volume, spread)),
+        ];
+        const book = createBook(volume, makeBookMaps(volume), faces);
+        (book.shadow.material as ThreeNamespace.MeshBasicMaterial).map = contact;
+        (book.shadow.material as ThreeNamespace.MeshBasicMaterial).needsUpdate = true;
+        book.group.visible = false;
+        scene.add(book.group);
+        built[index] = book;
+        return book;
+      };
 
       let disposed = false;
       let painted = false;
       let dirty = true;
       let progress = 0;
+      let announced = { book: -1, page: -2 };
 
       const resize = () => {
         const width = mount.clientWidth;
@@ -163,28 +197,47 @@ export function ScrollBook() {
         if (!dirty) return;
         dirty = false;
 
-        const p = progress;
-        const openness = between(p, OPEN_FROM, OPEN_TO);
-        const cover = openness * COVER_OPEN;
+        const { index, q, isLast } = locate(progress, writtenVolumes.length);
+        const book = ensure(index);
+        if (!book) return;
+        ensure(index + 1);
+
+        // Only the book being read is drawn. The others are moved out of the
+        // scene graph's way rather than faded, which would need every material
+        // to be transparent for the whole scroll to save one moment of it.
+        for (let i = 0; i < built.length; i += 1) {
+          const other = built[i];
+          if (other) other.group.visible = i === index;
+        }
+
+        const pagesEnd = isLast ? 1 : PAGES_END;
+        const enter = between(q, 0, ENTER_END);
+        const open = between(q, ENTER_END, OPEN_END);
+        const exit = isLast ? 0 : between(q, pagesEnd, 1);
+        const through = clamp01((q - OPEN_END) / (pagesEnd - OPEN_END));
+
+        // A cover that has opened and is now closing again on the way out.
+        const cover = open * (1 - exit) * COVER_OPEN;
         book.coverPivot.rotation.y = -cover;
 
-        // Pages. Each sheet gets its own slice of the scroll, and they overlap
-        // slightly so one page is lifting as the last settles.
-        const pageSpan = (PAGES_TO - OPEN_TO) / turns;
+        // Pages turn one at a time, each over its own slice of the run. The
+        // last sheet is never turned — there is nothing printed behind it.
+        const turns = Math.max(1, book.sheets.length - 1);
+        const reached = through * turns;
         for (let i = 0; i < book.sheets.length; i += 1) {
-          const start = OPEN_TO + i * pageSpan;
-          const turn = i < turns ? between(p, start, start + pageSpan * 1.25) : 0;
-          bendSheet(book.sheets[i], turn * (cover / Math.PI));
+          const turn = i < turns ? smooth(clamp01(reached - i)) : 0;
+          bendSheet(book.sheets[i], turn, sheetRestAngle(cover, i));
           book.sheets[i].pivot.visible = cover > 0.05;
         }
 
-        // The book lies flatter and turns to face the reader as it opens, then
-        // holds. A closed book angled slightly is a better hero than a flat one.
-        book.group.rotation.y = -0.42 + openness * 0.34;
-        book.group.rotation.x = openness * 0.06;
-        book.group.position.y = 0;
+        // Coming forward, then receding as the next volume takes over.
+        const away = 1 - enter + exit;
+        book.group.rotation.y = -0.42 + open * 0.34 - away * 0.55;
+        book.group.rotation.x = open * 0.06;
+        book.group.position.z = -away * 1.4;
+        book.group.scale.setScalar(1 - away * 0.16);
 
-        const size = portfolioVolume.size;
+        const size = book.size;
         const wide = mount.clientWidth >= 900;
 
         // A portrait viewport cannot frame a whole open spread and still leave
@@ -196,7 +249,7 @@ export function ScrollBook() {
         // margin: a page mid-turn bows out of the book's resting box.
         const distance =
           fitDistance(
-            size.width * (1 + openness * (wide ? 1.5 : 0.25)),
+            size.width * (1 + open * (wide ? 1.5 : 0.25)),
             size.height * (wide ? 1.5 : 1.22),
             camera.aspect,
             V_FOV,
@@ -204,38 +257,48 @@ export function ScrollBook() {
 
         // Aim off-centre so the caption has a corner to itself — sideways on a
         // wide viewport where the panel is docked bottom-left, upward on a
-        // narrow one where it sits underneath. Scaled by `openness` so it eases
-        // in with the rest of the motion.
-        const biasX = wide ? -distance * 0.14 * openness : 0;
-        const biasY = wide ? 0 : -distance * 0.07 * openness;
+        // narrow one where it sits underneath.
+        const biasX = wide ? -distance * 0.14 * open : 0;
+        const biasY = wide ? 0 : -distance * 0.07 * open;
 
         // Wide: centre the spread, which drifts left as the cover swings out.
         // Narrow: follow the recto instead, since that is the page in frame.
-        focus.set(openness * size.width * (wide ? -0.42 : 0.16), 0, 0);
+        focus.set(open * size.width * (wide ? -0.42 : 0.16), 0, 0);
         camera.position.set(focus.x + 0.1, focus.y + 0.35, distance);
         camera.lookAt(focus.x + biasX, focus.y + biasY, 0);
 
         renderer.render(scene, camera);
+
+        // The caption is React state, so it is only pushed when the reader
+        // actually arrives at a different page — not on every scroll frame.
+        const page = cover > 0.05 ? Math.min(turns, Math.floor(reached + 0.5)) : -1;
+        if (announced.book !== index || announced.page !== page) {
+          announced = { book: index, page };
+          setAt({ book: index, page });
+        }
+
         if (!painted) {
           painted = true;
           setLive(true);
         }
       };
+
       frame();
 
       return () => {
         disposed = true;
-        unsubscribe();
         observer.disconnect();
-        book.dispose();
+        unsubscribe();
+        for (const book of built) book?.dispose();
         contact.dispose();
         renderer.dispose();
-        if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+        scene.clear();
+        if (renderer.domElement.parentNode === mount) {
+          mount.removeChild(renderer.domElement);
+        }
       };
     };
 
-    // Deferred so the library lands after the HTML rather than inside the
-    // page's first bundle.
     void Promise.all([import("three"), import("./book"), import("./textures")]).then(
       ([three, bookModule, textureModule]) => {
         if (cancelled) return;
@@ -247,31 +310,18 @@ export function ScrollBook() {
       cancelled = true;
       teardown?.();
     };
-  }, [turns]);
+  }, [count]);
 
-  // Which project the reader is looking at, for the caption and the link.
-  // Kept in React rather than written into the DOM by the loop, because it
-  // changes about five times over the whole scroll rather than every frame.
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section || !live) return;
-    return subscribeScroll(() => {
-      const p = progressThrough(section);
-      const pageSpan = (PAGES_TO - OPEN_TO) / turns;
-      const index = Math.floor((p - OPEN_TO) / pageSpan);
-      setActive(p < OPEN_TO ? -1 : Math.min(turns - 1, Math.max(0, index)));
-    });
-  }, [live, turns]);
-
-  const project = active >= 0 ? writtenVolumes[active] : null;
+  const volume = writtenVolumes[at.book];
+  const spread = at.page > 0 ? volume?.spreads[at.page - 1] : null;
 
   return (
     <section
       ref={sectionRef}
-      // Tall enough that every page gets a comfortable screen of scroll. Under
-      // reduced motion this collapses: the inline style is only applied when
-      // the scene is live, so the fallback is an ordinary-height hero.
-      style={live ? { height: `${(turns + 2) * 100}vh` } : undefined}
+      // Two screens of scroll per book, plus a screen of run-out. Under reduced
+      // motion the inline style is not applied and this collapses to an
+      // ordinary-height hero.
+      style={live ? { height: `${count * SCREENS_PER_BOOK * 100 + 100}vh` } : undefined}
       className="border-line relative border-b"
       aria-label="Selected work"
     >
@@ -285,24 +335,24 @@ export function ScrollBook() {
               Selected work
             </p>
             <h2 className="mt-3 max-w-3xl font-serif text-3xl leading-tight sm:text-5xl">
-              Four projects, each one a working site rather than a screenshot.
+              Four projects, each a working site rather than a screenshot.
             </h2>
             <ul className="mt-8 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-              {writtenVolumes.map((volume) => (
-                <li key={volume.title}>
+              {writtenVolumes.map((item) => (
+                <li key={item.title}>
                   <Link
-                    href={volume.href ?? "/projects"}
+                    href={item.href ?? "/projects"}
                     className="group flex items-baseline gap-3 py-1"
                   >
                     <span
                       className="size-2.5 shrink-0 rounded-full"
-                      style={{ background: volume.cloth }}
+                      style={{ background: item.cloth }}
                       aria-hidden
                     />
                     <span className="font-serif text-lg group-hover:underline">
-                      {volume.title}
+                      {item.title}
                     </span>
-                    <span className="text-muted text-xs">{volume.subtitle}</span>
+                    <span className="text-muted text-xs">{item.subtitle}</span>
                   </Link>
                 </li>
               ))}
@@ -316,44 +366,37 @@ export function ScrollBook() {
           flow-positioned caption lands in the middle of the screen on top of
           the book instead of underneath it.
         */}
-        {live && (
+        {live && volume && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto w-full max-w-[88rem] px-5 pb-10 sm:px-8">
             <p className="sr-only" role="status" aria-live="polite">
-              {project ? `${project.title}. ${project.subtitle}.` : "Selected work."}
+              {volume.title}
+              {spread ? `. ${spread.heading}.` : ". "}
             </p>
 
-            {project ? (
-              <div className="pointer-events-auto max-w-sm rounded-xl bg-black/75 p-4 text-white backdrop-blur-sm">
-                <p
-                  className="text-[11px] font-medium tracking-[0.14em] uppercase"
-                  style={{ color: project.foil ?? "#cfcabb" }}
-                >
-                  {String(active + 1).padStart(2, "0")} / {String(turns).padStart(2, "0")} ·{" "}
-                  {project.year}
-                </p>
-                <h2 className="mt-1 font-serif text-xl leading-tight">{project.title}</h2>
-                <p className="mt-0.5 text-xs text-white/60">{project.subtitle}</p>
+            <div className="pointer-events-auto max-w-sm rounded-xl bg-black/75 p-4 text-white backdrop-blur-sm">
+              <p
+                className="text-[11px] font-medium tracking-[0.14em] uppercase"
+                style={{ color: volume.foil ?? "#cfcabb" }}
+              >
+                {String(at.book + 1).padStart(2, "0")} / {String(count).padStart(2, "0")} ·{" "}
+                {volume.year}
+              </p>
+              <h2 className="mt-1 font-serif text-xl leading-tight">{volume.title}</h2>
+              <p className="mt-0.5 text-xs text-white/60">
+                {spread ? spread.heading : volume.subtitle}
+              </p>
+              <div className="mt-3 flex items-center gap-3">
                 <Link
-                  href={project.href ?? "/projects"}
-                  className="mt-3 inline-flex rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-black transition hover:bg-white/90"
+                  href={volume.href ?? "/projects"}
+                  className="inline-flex rounded-full bg-white px-3 py-1.5 text-[11px] font-medium text-black transition hover:bg-white/90"
                 >
                   Read the case study
                 </Link>
+                <span className="text-[10px] text-white/40">
+                  {at.page < 0 ? "Scroll to open" : `Page ${at.page + 1}`}
+                </span>
               </div>
-            ) : (
-              <div className="pointer-events-auto max-w-sm rounded-xl bg-black/70 p-4 text-white backdrop-blur-sm">
-                <p className="text-[11px] font-medium tracking-[0.18em] text-white/50 uppercase">
-                  Selected work
-                </p>
-                {/* Kept to two lines at every width — at 3xl this ran three
-                    lines deep and pushed the scroll cue off the bottom of the
-                    viewport, which is the one line that has to be readable. */}
-                <h2 className="mt-1.5 font-serif text-lg leading-snug sm:text-xl">
-                  Four projects, each a working site rather than a screenshot.
-                </h2>
-                <p className="mt-2 text-xs text-white/55">Scroll to turn the pages.</p>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </div>

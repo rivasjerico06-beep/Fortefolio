@@ -36,7 +36,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { bendSheet, createBook, fitDistance, type Book } from "@/components/bindery/book";
+import {
+  bendSheet,
+  createBook,
+  fitDistance,
+  sheetRestAngle,
+  type Book,
+} from "@/components/bindery/book";
 import {
   makeBookMaps,
   makeContactShadowTexture,
@@ -560,7 +566,7 @@ export function Shelf() {
           // so a still page over a moving cover still has to be redrawn.
           if (next !== current || coverMoved || world.draggingSheet === s) {
             world.pageProgress[s] = next;
-            bendSheet(book.sheets[s], next * (world.coverAngle.current / Math.PI));
+            bendSheet(book.sheets[s], next, sheetRestAngle(world.coverAngle.current, s));
             changed = true;
           }
           book.sheets[s].pivot.visible = world.coverAngle.current > 0.05;

@@ -35,6 +35,8 @@ export type Sheet = {
   /** Untouched copy of the flat vertex positions, used as the bend basis. */
   rest: Float32Array;
   width: number;
+  /** How far the hinge travels forward over a full turn. See `bendSheet`. */
+  travelZ: number;
 };
 
 export type Book = {
@@ -278,13 +280,19 @@ export function createBook(
         metalness: 0,
       }),
     );
-    // Plain stock on the back. Handing the verso the *next* face — which is
-    // the obvious thing to do and what this did first — prints the same page
-    // on both halves of an open book: the sheet you just turned shows page N
-    // on its back while the sheet beneath shows page N on its front.
+    // The back of a sheet carries the same page as its front, so the page you
+    // were reading travels right-to-left as you turn it and the left half of
+    // an open book is never blank.
+    //
+    // The tempting version — verso gets the *next* face — is wrong, and was
+    // the first thing this did: turning sheet N then shows page N+1 on its
+    // back while sheet N+1 shows page N+1 on its front, so the same page is
+    // printed on both halves at once. Plain stock on the back is also wrong in
+    // the other direction: correct, but it leaves a blank slab filling half
+    // the frame for the whole read.
     const versoMaterial = track(
       new THREE.MeshStandardMaterial({
-        map: track(mirrored(maps.pageFace)),
+        map: track(mirrored(faces[index])),
         roughness: 0.95,
         metalness: 0,
         side: THREE.BackSide,
@@ -316,6 +324,13 @@ export function createBook(
         (rectoGeometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array,
       ),
       width: sheetWidth,
+      // Where this sheet's hinge ends up once turned. It has to clear the open
+      // board, and it has to grow with `index`: the stack inverts through the
+      // flip, so the sheet turned *last* belongs on top of the left-hand pile,
+      // while `lift` (its resting height in the shut book) runs the other way.
+      // Driving the travel off `lift` alone puts the first page turned in front
+      // of every page turned after it, and earlier pages bleed through.
+      travelZ: depth / 2 - BOARD / 2 + 0.03 + index * 0.004 + lift,
     });
   }
 
@@ -369,18 +384,45 @@ export function createBook(
 }
 
 /**
- * Bends one sheet.
+ * Where a fully turned sheet comes to rest, in radians: level with the cover,
+ * with a hair of fan so successive pages do not land in the same plane.
  *
- * `progress` runs 0 (lying against the front board) → 1 (turned fully left).
- * The sheet rotates about the hinge while its vertices bow away from the
- * spine, peaking at the halfway point and flattening again at both ends — so
- * a page at rest is genuinely flat rather than permanently warped.
+ * Angle alone cannot get a turned page in front of the open board — see
+ * `bendSheet`, which handles the depth half of the problem.
  */
-export function bendSheet(sheet: Sheet, progress: number) {
-  const clamped = Math.min(1, Math.max(0, progress));
-  sheet.pivot.rotation.y = -clamped * Math.PI;
+export function sheetRestAngle(coverAngle: number, index: number) {
+  return coverAngle + index * 0.008;
+}
 
-  const swell = Math.sin(clamped * Math.PI);
+/**
+ * Poses one sheet.
+ *
+ * `turn` is the fraction of the page's travel, 0 (flat against the block) to 1
+ * (come to rest on the open cover). `restAngle` is where that rest position
+ * is, from `sheetRestAngle`.
+ *
+ * Those are deliberately two arguments. An earlier version passed only
+ * `angle / π` and derived everything from it, which quietly breaks: a page at
+ * rest is turned to the cover's angle, about 0.92π, so "fully turned" arrives
+ * at 0.92 rather than 1. Every quantity scaled by it — the forward travel
+ * below, the curvature — then lands about eight per cent short, which is
+ * exactly enough to leave a rested page coplanar with the board instead of on
+ * top of it.
+ *
+ * The sheet also travels forward, not just rotates. The front board hinges
+ * outside the text block, so its arc always ends in front of the page's at any
+ * shared angle. Rotation alone cannot close that: turn the page further and it
+ * sinks behind the board, turn it less and it stands off as a foreshortened
+ * strip — both were tried. Sliding the hinge forward over the turn does close
+ * it, and it is what paper does: a page lifts off the block and comes to rest
+ * on top of the open cover rather than level with where it started.
+ */
+export function bendSheet(sheet: Sheet, turn: number, restAngle: number) {
+  const t = Math.min(1, Math.max(0, turn));
+  sheet.pivot.rotation.y = -t * restAngle;
+  sheet.pivot.position.z = t * sheet.travelZ;
+
+  const swell = Math.sin(t * Math.PI);
   const bulge = 0.11 * swell;
   const twist = 0.05 * swell;
 
