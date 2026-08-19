@@ -79,8 +79,24 @@ export function ScrollBook() {
   const [live, setLive] = useState(false);
   /** Which book is showing, and which of its pages. -1 = not open yet. */
   const [at, setAt] = useState({ book: 0, page: -1 });
+  /** The reader has asked for the scene despite a reduced-motion preference. */
+  const [forced, setForced] = useState(false);
+  /** Why the scene is not running, when the reader asks for it and it cannot. */
+  const [note, setNote] = useState<string | null>(null);
 
   const count = writtenVolumes.length;
+
+  // Set from a click, never from an effect, so this stays a plain event
+  // handler and the capability checks stay on the client where they belong.
+  const play = () => {
+    if (!supportsWebGL()) {
+      setNote(
+        "This browser has WebGL switched off, so the books cannot be drawn here. Every one of them is listed below, and the case studies are unaffected.",
+      );
+      return;
+    }
+    setForced(true);
+  };
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -90,7 +106,15 @@ export function ScrollBook() {
     // or a browser without a GL context, must never download Three.js at all.
     // This is the front page — most of its visitors should pay nothing for a
     // scene they are not going to be shown.
-    if (prefersReducedMotion() || !supportsWebGL()) return;
+    //
+    // `forced` is the reader overriding the reduced-motion default from the
+    // button below. Respecting the setting silently is correct and also
+    // baffling: a machine with "reduce motion" on — which a laptop can pick up
+    // from a battery saver without anyone choosing it — showed a text list
+    // where the same person's phone showed the books, with nothing on the page
+    // to explain the difference. The setting still decides the default; it no
+    // longer decides the ceiling.
+    if ((prefersReducedMotion() && !forced) || !supportsWebGL()) return;
 
     let cancelled = false;
     let teardown: (() => void) | null = null;
@@ -310,7 +334,7 @@ export function ScrollBook() {
       cancelled = true;
       teardown?.();
     };
-  }, [count]);
+  }, [count, forced]);
 
   const volume = writtenVolumes[at.book];
   const spread = at.page > 0 ? volume?.spreads[at.page - 1] : null;
@@ -357,6 +381,31 @@ export function ScrollBook() {
                 </li>
               ))}
             </ul>
+
+            {/*
+              The way out of the reduced-motion default. It is an opt-in rather
+              than the other way round: the setting is honoured until someone
+              says otherwise, and a reader who never presses this keeps a page
+              with no pinned scrubbing on it at all.
+            */}
+            <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button
+                type="button"
+                onClick={play}
+                className="border-line-strong hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors"
+              >
+                Turn the pages
+              </button>
+              <p className="text-ink-3 text-xs">
+                The books are held back because this device asks for reduced motion.
+              </p>
+            </div>
+
+            {note && (
+              <p className="text-ink-3 mt-3 max-w-prose text-xs leading-relaxed" role="status">
+                {note}
+              </p>
+            )}
           </div>
         )}
 

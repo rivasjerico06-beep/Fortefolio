@@ -518,7 +518,13 @@ Three things it refuses to do:
 
 - **Pin under reduced motion.** A scrubbed pin is the effect that setting most
   clearly asks you not to build. That path renders a static hero listing the
-  same four projects, at ordinary page height, and never starts a scene.
+  same four projects, at ordinary page height, and never starts a scene — but
+  it does offer a **Turn the pages** button, and says why the books are being
+  held back. Honouring the setting silently is correct and also baffling: a
+  laptop can inherit "reduce motion" from a battery saver without anyone
+  choosing it, and the same person's phone then shows books where their laptop
+  shows a list, with nothing on the page to explain the difference. The setting
+  decides the default; it does not decide the ceiling.
 - **Download Three.js speculatively.** The reduced-motion and WebGL checks run
   _before_ the dynamic import, so most of the visitors who will not see the
   book pay nothing for it. The home page's initial payload is ~235KB gzipped,
