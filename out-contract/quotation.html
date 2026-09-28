@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quotation</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Georgia", "Times New Roman", serif; color: #221c15; background: #fff; font-size: 11pt; line-height: 1.55; }
+  .sheet { width: 794px; margin: 0 auto; padding: 56px 60px 60px; background: #fff; }
+  header { border-bottom: 3px double #8a6a3b; padding-bottom: 18px; margin-bottom: 26px; }
+  h1 { margin: 0; font-size: 26pt; letter-spacing: .34em; text-transform: uppercase; color: #6b4e24; }
+  .sub { margin: 8px 0 0; font-size: 9pt; letter-spacing: .2em; text-transform: uppercase; color: #8d7a5f; }
+  table { width: 100%; border-collapse: collapse; }
+  .meta td { padding: 4px 0; font-size: 10pt; }
+  .meta .lbl { width: 120px; font-size: 8.5pt; letter-spacing: .14em; text-transform: uppercase; color: #8d7a5f; }
+  .fill { border-bottom: 1px solid #c9bda6; display: inline-block; width: 100%; height: 14px; }
+  h2 { font-size: 10pt; letter-spacing: .18em; text-transform: uppercase; color: #6b4e24; border-bottom: 1px solid #ddd2bc; padding-bottom: 5px; margin: 30px 0 0; }
+  .items { margin-top: 4px; }
+  .items th { text-align: left; font-size: 8.5pt; letter-spacing: .14em; text-transform: uppercase; color: #8d7a5f; font-weight: normal; padding: 10px 0 8px; border-bottom: 1px solid #ddd2bc; }
+  .items th.amt, .items td.amt { text-align: right; white-space: nowrap; }
+  .items td { padding: 12px 0; border-bottom: 1px solid #efe8da; vertical-align: top; }
+  .item-name { font-size: 12pt; color: #3a2f22; }
+  .incl { margin: 7px 0 0; padding-left: 16px; font-size: 10pt; color: #6a5c48; }
+  .incl li { margin-bottom: 2px; }
+  .incl-cap { font-size: 8.5pt; letter-spacing: .14em; text-transform: uppercase; color: #8d7a5f; margin: 8px 0 2px; }
+  .totals { margin-top: 18px; }
+  .totals td { padding: 6px 0; }
+  .totals .r { text-align: right; }
+  .totals .grand td { border-top: 2px solid #6b4e24; border-bottom: 3px double #6b4e24; font-weight: bold; font-size: 15pt; color: #6b4e24; padding: 10px 0; }
+  .notes { margin-top: 30px; }
+  ol { margin: 8px 0 0; padding-left: 18px; font-size: 9.5pt; color: #4a3f31; }
+  ol li { margin-bottom: 5px; }
+  .sigs { margin-top: 36px; display: flex; gap: 50px; }
+  .sig { flex: 1; }
+  .sigline { border-bottom: 1px solid #221c15; height: 32px; }
+  .sigcap { font-size: 8.5pt; letter-spacing: .12em; text-transform: uppercase; color: #8d7a5f; margin-top: 5px; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <h1>Quotation</h1>
+    <p class="sub">Event Styling &amp; Decor</p>
+  </header>
+
+  <table class="meta">
+    <tr><td class="lbl">Quotation No.</td><td><span class="fill"></span></td>
+        <td class="lbl" style="padding-left:28px">Date</td><td><span class="fill"></span></td></tr>
+    <tr><td class="lbl">Event Date</td><td><span class="fill"></span></td>
+        <td class="lbl" style="padding-left:28px">Venue</td><td><span class="fill"></span></td></tr>
+  </table>
+
+  <h2>Scope &amp; Pricing</h2>
+  <table class="items">
+    <tr><th>Item</th><th class="amt">Amount</th></tr>
+    <tr>
+      <td><div class="item-name">Ceiling</div></td>
+      <td class="amt item-name">₱30,000.00</td>
+    </tr>
+    <tr>
+      <td>
+        <div class="item-name">Full Decor</div>
+        <div class="incl-cap">Inclusions</div>
+        <ul class="incl">
+          <li>Full stage decor</li>
+          <li>Centerpiece</li>
+          <li>Entrance</li>
+        </ul>
+      </td>
+      <td class="amt item-name">₱25,000.00</td>
+    </tr>
+    <tr>
+      <td><div class="item-name">Transportation</div></td>
+      <td class="amt item-name">₱2,500.00</td>
+    </tr>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td class="r">₱57,500.00</td></tr>
+    <tr><td>Discount / adjustment</td><td class="r"><span class="fill" style="width:130px"></span></td></tr>
+    <tr class="grand"><td>Total</td><td class="r">₱57,500.00</td></tr>
+  </table>
+
+  <div class="notes">
+    <h2>Notes</h2>
+    <ol>
+      <li>This quotation is valid for thirty (30) days from the date issued.</li>
+      <li>A 50% down payment is required to reserve the date; the balance is due on or before the event day.</li>
+      <li>Prices cover the items and inclusions listed above. Any additional item, area, or revision to the design is quoted separately.</li>
+      <li>Flower and material varieties are subject to availability; substitutions of equivalent value may be made.</li>
+      <li>Transportation covers delivery, setup, and pull-out within the agreed service area. Venues beyond it incur an additional charge.</li>
+      <li>All decor items remain the property of the provider. Losses or damages are charged at replacement cost.</li>
+    </ol>
+  </div>
+
+  <div class="sigs">
+    <div class="sig"><div class="sigline"></div><div class="sigcap">Conforme — signature over printed name</div></div>
+    <div class="sig"><div class="sigline"></div><div class="sigcap">Prepared by</div></div>
+  </div>
+</div>
+</body>
+</html>
